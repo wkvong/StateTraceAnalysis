@@ -13,7 +13,7 @@ if ~isempty (E)
         if ~isempty(E{i})
             E{i}
             u = nchoosek(E{i},2);
-            u
+            size(u,1)
             for j=1:size(u,1)
                 k1=find(nodes==u(j,1));
                 k2=find(nodes==u(j,2));

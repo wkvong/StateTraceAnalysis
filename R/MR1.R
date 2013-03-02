@@ -1,3 +1,64 @@
+library(pracma)
+library(expm)
+
+MR1 <- function(y, w, E) {
+  # Uses lsqlin to solve standard monotonic regression problems
+  # MR conducts monotonic regression on each column separately
+  # y is a vector of values - the data
+  # w is the weight matrix for the (lsqlin) fit: either a vector of positive
+  # numbers or a positive definite matrix
+  # E is an adjacency matrix coding the partial order model
+
+  n <- length(y)
+
+  if(nargs() == 1) {
+    w <- diag(n)
+    E <- matrix(0, n, n)
+  }
+  else if(nargs() == 2) {
+    E <- matrix(0, n, n)
+  }
+
+  ## print(w)
+  ## if(nrow(w) == 0 & ncol(w) == 0) {
+  ##   w <- diag(n)
+  ## }
+
+  if(nrow(E) == 0 & ncol(E) == 0) {
+    E <- matrix(0, n, n)
+  }
+
+  if(is.list(E)) {
+    adj <- cell2adj(1:n, E)
+  }
+  else {
+    adj <- E
+  }
+
+  if(sum(adj) > 0) {
+    A <- adj2ineq(adj) # turn adjacency matrix into a set of inequalities
+    b <- matrix(0, nrow(A), 1)
+  }
+  else {
+    A <- matrix()
+    b <- matrix()
+  }
+
+  if(is.vector(w)) {
+    C <<- diag(sqrt(w))
+  }
+  else {
+    C <<- expm::sqrtm(w) # use expm version of this function
+  }
+
+  d <<- C %*% y
+
+  # TODO; find out what is wrong!
+  
+  (L <- lsqlin(A, b, C, d))
+  return(C %*% L)
+}
+
 adj2cell <- function(adj) {
   # converts adjacency matrix to cell array
   
@@ -25,8 +86,8 @@ adj2ineq <- function(adj) {
 
   # fill in matrix with inequality coefficients
   for(k in 1:length(i)) {
-    Aineq[k, i[k]] = 1;
-    Aineq[k, j[k]] = -1;
+    Aineq[k, i[k]] <- 1;
+    Aineq[k, j[k]] <- -1;
   }
 
   return(Aineq)
@@ -39,7 +100,6 @@ cell2adj <- function(nodes, E=list()) {
     E <- list(E) # probably won't work unless input is a set of lists, TODO: ask john about this
 
   n <- length(nodes)
-  print(n)
   
   # initialize adjacency matrix with zeros
   adj <- matrix(0, nrow = n, ncol = n)
@@ -48,13 +108,11 @@ cell2adj <- function(nodes, E=list()) {
   if(length(E) != 0) {
     for(i in 1:length(E)) {
       if(length(E[[i]]) != 0) {
-        # TODO: ask john what is wrong
-        ## u <- choose(E[[i]], 2)
-        u <- matrix(E[[i]], nrow = 1) # convert u to matrix to use nrow
+        u <- t(combn(E[[i]], 2))
         for(j in 1:nrow(u)) {
           k1 <- which(nodes == u[j, 1])
           k2 <- which(nodes == u[j, 2])
-          adj[k1, k2] = 1;
+          adj[k1, k2] <- 1;
         }
       }
     }
@@ -64,12 +122,12 @@ cell2adj <- function(nodes, E=list()) {
 }
 
 # for testing
-A <- matrix(c(1, 0, 0, 1), nrow = 2, ncol = 2, byrow = TRUE)
-
 A <- matrix(c(1, 1, 0, 0, 1, 1, 1, 1, 1), nrow = 3, byrow = TRUE)
 
 E <- adj2cell(A)
 
-nodes <- c(1, 2, 3)
+nodes <- 1:nrow(A)
 
 C <- cell2adj(nodes, E)
+
+L <- MR1(c(1, 4, 3), c(1, 1, 1), A)

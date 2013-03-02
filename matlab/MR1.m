@@ -45,6 +45,7 @@ if isvector(w)
 else
     C = sqrtm(w);
 end
+
 d = C*y;
 x0 = repmat(mean(y),n,1); % starting point is a vector of means
 [x fit resid exitflag output] = lsqlin(C,d,A,b,[],[],[],[],x0,options);
