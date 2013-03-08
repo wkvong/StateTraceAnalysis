@@ -47,6 +47,8 @@ else
 end
 
 d = C*y;
+
 x0 = repmat(mean(y),n,1); % starting point is a vector of means
+
 [x fit resid exitflag output] = lsqlin(C,d,A,b,[],[],[],[],x0,options);
 %fit = real(fit)/(numel(y)-1);
