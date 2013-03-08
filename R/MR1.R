@@ -1,7 +1,23 @@
-library(pracma)
+library(limSolve)
 library(expm)
 
-MR1 <- function(y, w, E) {
+staMR <- function(data, E = list()) {
+  tol <- 10e-5
+
+  if(!is.list(E) & is.vector(E)) {
+    E <- list(E) ## convert to list if vector is specified
+  }
+
+  y <- data
+
+  
+}
+
+staSTATS <- function(data) {
+  
+}
+
+MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   # Uses lsqlin to solve standard monotonic regression problems
   # MR conducts monotonic regression on each column separately
   # y is a vector of values - the data
@@ -11,18 +27,9 @@ MR1 <- function(y, w, E) {
 
   n <- length(y)
 
-  if(nargs() == 1) {
+  if(nrow(w) == 0 & ncol(w) == 0) {
     w <- diag(n)
-    E <- matrix(0, n, n)
   }
-  else if(nargs() == 2) {
-    E <- matrix(0, n, n)
-  }
-
-  ## print(w)
-  ## if(nrow(w) == 0 & ncol(w) == 0) {
-  ##   w <- diag(n)
-  ## }
 
   if(nrow(E) == 0 & ncol(E) == 0) {
     E <- matrix(0, n, n)
@@ -45,25 +52,23 @@ MR1 <- function(y, w, E) {
   }
 
   if(is.vector(w)) {
-    C <<- diag(sqrt(w))
+    C <- diag(sqrt(w))
   }
   else {
-    C <<- expm::sqrtm(w) # use expm version of this function
+    C <- expm::sqrtm(w) # use expm version of this function
   }
 
-  d <<- C %*% y
+  d <- C %*% y
 
-  # TODO; find out what is wrong!
-  
-  (L <- lsqlin(A, b, C, d))
-  return(C %*% L)
+  L <- lsei(A = C, B = d, G = -A, H = b, type=2, verbose = TRUE)
+  return(L)
 }
 
 adj2cell <- function(adj) {
   # converts adjacency matrix to cell array
   
-  row <- which(A != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
-  column <- which(A != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
+  row <- which(adj != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
+  column <- which(adj != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
 
   E <- rep(list(list()), length(row)) # initializes a list of empty lists
 
@@ -77,13 +82,18 @@ adj2cell <- function(adj) {
 adj2ineq <- function(adj) {
   # converts an adjacency matrix to an inequality coefficient matrix for monotonic regression
   
-  i <- which(A != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
-  j <- which(A != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
-  s <- t(A)[t(A) != 0] # get values of non-zero elements, need to transpose to get correct order
+  i <- which(adj != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
+  j <- which(adj != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
+  s <- t(adj)[t(adj) != 0] # get values of non-zero elements, need to transpose to get correct order
 
+  print(i)
+  print(j)
+  
   # initialize inequality matrix with zeros
   Aineq <- matrix(0, nrow = length(i), ncol = nrow(adj)) 
 
+  print(Aineq)
+  
   # fill in matrix with inequality coefficients
   for(k in 1:length(i)) {
     Aineq[k, i[k]] <- 1;
@@ -117,17 +127,13 @@ cell2adj <- function(nodes, E=list()) {
       }
     }
   }
-  
   return(adj)
 }
 
-# for testing
-A <- matrix(c(1, 1, 0, 0, 1, 1, 1, 1, 1), nrow = 3, byrow = TRUE)
+A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 
-E <- adj2cell(A)
+w <- diag(3)
 
-nodes <- 1:nrow(A)
+L <- MR1(y=c(2, 4, 8), w, E=A)
 
-C <- cell2adj(nodes, E)
-
-L <- MR1(c(1, 4, 3), c(1, 1, 1), A)
+print(L)
