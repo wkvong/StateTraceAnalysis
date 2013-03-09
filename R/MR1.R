@@ -1,3 +1,5 @@
+## TODO: give names to lists and call them when appropriate
+
 library(limSolve)
 library(expm)
 
@@ -10,11 +12,78 @@ staMR <- function(data, E = list()) {
 
   y <- data
 
+  if(!is.list(y)) {
+    y <- list(y)
+  }
+
+  if(!is.list(y[[1]])) {
+    y = staSTATS(y);
+  }
+
+  x <- list()
+  f <- rep(0, length(y))
+  ## TODO: exitflag information
+
+  names(y) <- c("means", "weights")
   
+  for(i in 1:length(y)) {
+    ## TODO: y[[i]].means/weights
+    reg <- MR1(y[[i]], y[[i]], E)
+
+    
+    x[[i]] <- reg$X
+    f[i] <- reg$solutionNorm
+    ## TODO: exit flag
+  }
+
+  ## round numbers close to tolerance level
+  f[f < tol] <- 0
+
+  if(!is.list(data)) {
+    x <- x[[1]] ## TODO: what does this do?
+  }
+
+  ## TODO: return exitflag as well
+  return(list(x, f))
 }
 
 staSTATS <- function(data) {
+  ## TODO: reformat function documentation to fit R standards
+  ## data is NSUB x NCOND sub-matrix or cell array of sub-matrices
+  ## returns means, cov, nsub and weights
+  ## output.means = observed means
+  ## output.n = number of subjects
+  ## output.cov = observed covariance matrix
+  ## output.covs = pooled covariance matrix (compound symmetry) - not used 
+  ## output.weights = weight matrix for monotonic regression
   
+  y <- data
+
+  if(!is.list(data)) {
+    y <- list(y)
+  }
+
+  output <- rep(list(list()), length(y))
+
+  for(idata in 1:length(y)) {
+    yy <- y[[idata]]
+    u <- base::rowSums(yy, na.rm = TRUE)
+    k <- which(u == 0)
+    ## TODO: yy = yy(k,:) ## delete NaNs??
+
+    out <- list()
+    
+    ## TODO: out.means
+    ## TODO: out.n
+
+    ## TODO: out.cov/out.weights
+
+    output[[i]] <- out
+  }
+
+  if(!is.list(data)) {
+    output <- output[[1]]
+  }
 }
 
 MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {

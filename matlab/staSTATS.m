@@ -4,7 +4,7 @@ function output = staSTATS (data)
 % output.means = observed means
 % output.n = number of subjects
 % output.cov = observed covariance matrix
-% output.covs = pooled covariance matriex (compound symmetry) - not used 
+% output.covs = pooled covariance matrix (compound symmetry) - not used 
 % output.weights = weight matrix for monotonic regression
 
 y = data;
