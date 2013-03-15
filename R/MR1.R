@@ -54,7 +54,6 @@ staSTATS <- function(data) {
   ## output.means = observed means
   ## output.n = number of subjects
   ## output.cov = observed covariance matrix
-  ## output.covs = pooled covariance matrix (compound symmetry) - not used 
   ## output.weights = weight matrix for monotonic regression
   
   y <- data
@@ -67,23 +66,41 @@ staSTATS <- function(data) {
 
   for(idata in 1:length(y)) {
     yy <- y[[idata]]
-    u <- base::rowSums(yy, na.rm = TRUE)
-    k <- which(u == 0)
-    ## TODO: yy = yy(k,:) ## delete NaNs??
+    yy <- yy[complete.cases(yy), ] ## delete rows with NAs
 
     out <- list()
+    out.names <- c("means", "n", "cov", "weights", "lm")
+
+    out[[1]] <- colMeans(yy)
+    out[[2]] <- nrow(yy)
+
+    if(out[[2]] > 1) {
+      out[[3]] <- cov(yy)
+      out[[4]] <- nrow(yy)/diag(cov(yy))
+    }
+    else {
+      out[[3]] <- matrix(0, nrow=ncol(yy), ncol=ncol(yy))
+      out[[4]] <- matrix(1, nrow=ncol(yy), ncol=1)
+    }
+
+    ## tranpose weight matrix
+    out[[4]] <- t(out[[4]])
+    out[[5]] <- diag(diag(out[[3]]))
+
+    ## give names to out list
+    names(out) <- out.names
+
+    print(out)
     
-    ## TODO: out.means
-    ## TODO: out.n
-
-    ## TODO: out.cov/out.weights
-
-    output[[i]] <- out
+    ## add to output
+    output[[idata]] <- out
   }
 
   if(!is.list(data)) {
     output <- output[[1]]
   }
+
+  return(output)
 }
 
 MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
@@ -206,3 +223,9 @@ w <- diag(3)
 L <- MR1(y=c(2, 4, 8), w, E=A)
 
 print(L)
+
+## read in data and convert to a list
+x <- matrix(scan('../matlab/x.dat'), ncol = 5, byrow = TRUE)
+
+output <- staSTATS(x)
+print(output)
