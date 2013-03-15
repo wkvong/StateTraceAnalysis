@@ -10,6 +10,7 @@ function [x fit exitflag output] = MR1 (y, w, E)
 % x = best fitting values
 % Ffit = weighted least squares fit
 % exitflag = vector of exit flags for fits for each variable
+
 n = numel(y);
 if size(y,1)==1 % convert to column vector
     y=y';
@@ -47,6 +48,11 @@ else
 end
 
 d = C*y;
+
+C
+d
+A
+b
 
 x0 = repmat(mean(y),n,1); % starting point is a vector of means
 

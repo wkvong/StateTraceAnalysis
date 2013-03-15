@@ -14,7 +14,7 @@ end
 output = cell(1,numel(y));
 for idata = 1:numel(y)
     yy = y{idata};
-    u = sum(isnan(yy),2)
+    u = sum(isnan(yy),2);
     k=find(u==0); 
     yy=yy(k,:); % delete nans
     out.means = mean(yy,1);

@@ -17,31 +17,30 @@ staMR <- function(data, E = list()) {
   }
 
   if(!is.list(y[[1]])) {
+
     y = staSTATS(y);
   }
-
+  
   x <- list()
   f <- rep(0, length(y))
   ## TODO: exitflag information
 
-  names(y) <- c("means", "weights")
-  
   for(i in 1:length(y)) {
-    ## TODO: y[[i]].means/weights
-    reg <- MR1(y[[i]], y[[i]], E)
+    yy <- y[[i]]
 
+    output <- MR1(yy$means, yy$weights, E)
     
-    x[[i]] <- reg$X
-    f[i] <- reg$solutionNorm
+    x[[i]] <- output$X
+    f[i] <- output$solutionNorm
     ## TODO: exit flag
   }
 
   ## round numbers close to tolerance level
   f[f < tol] <- 0
 
-  if(!is.list(data)) {
-    x <- x[[1]] ## TODO: what does this do?
-  }
+  ## if(!is.list(data)) {
+  ##   x <- x[[1]] ## TODO: what does this do?
+  ## }
 
   ## TODO: return exitflag as well
   return(list(x, f))
@@ -90,13 +89,11 @@ staSTATS <- function(data) {
     ## give names to out list
     names(out) <- out.names
 
-    print(out)
-    
     ## add to output
     output[[idata]] <- out
   }
 
-  if(!is.list(data)) {
+  if(!is.list(output)) {
     output <- output[[1]]
   }
 
@@ -104,12 +101,12 @@ staSTATS <- function(data) {
 }
 
 MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
-  # Uses lsqlin to solve standard monotonic regression problems
-  # MR conducts monotonic regression on each column separately
-  # y is a vector of values - the data
-  # w is the weight matrix for the (lsqlin) fit: either a vector of positive
-  # numbers or a positive definite matrix
-  # E is an adjacency matrix coding the partial order model
+  ## Uses lsqlin to solve standard monotonic regression problems
+  ## MR conducts monotonic regression on each column separately
+  ## y is a vector of values - the data
+  ## w is the weight matrix for the (lsqlin) fit: either a vector of positive
+  ## numbers or a positive definite matrix
+  ## E is an adjacency matrix coding the partial order model
 
   n <- length(y)
 
@@ -117,8 +114,10 @@ MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
     w <- diag(n)
   }
 
-  if(nrow(E) == 0 & ncol(E) == 0) {
-    E <- matrix(0, n, n)
+  if(is.matrix(E)) {
+    if(nrow(E) == 0 & ncol(E) == 0) {
+      E <- matrix(0, n, n)
+    }
   }
 
   if(is.list(E)) {
@@ -129,36 +128,38 @@ MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   }
 
   if(sum(adj) > 0) {
-    A <- adj2ineq(adj) # turn adjacency matrix into a set of inequalities
+    A <- -adj2ineq(adj) ## turn adjacency matrix into a set of inequalities
     b <- matrix(0, nrow(A), 1)
   }
   else {
-    A <- matrix()
-    b <- matrix()
+    A <- NULL
+    b <- NULL
   }
 
-  if(is.vector(w)) {
+  if(is.vector(w) | nrow(w) == 1) {
+    w <- w[1, ]
     C <- diag(sqrt(w))
   }
   else {
-    C <- expm::sqrtm(w) # use expm version of this function
+    C <- expm::sqrtm(w) ## use expm version of this function
   }
 
   d <- C %*% y
 
-  L <- lsei(A = C, B = d, G = -A, H = b, type=2, verbose = TRUE)
+  L <- lsei(A = C, B = d, G = A, H = b, type=2, verbose = TRUE)
+
   return(L)
 }
 
 adj2cell <- function(adj) {
-  # converts adjacency matrix to cell array
+  ## converts adjacency matrix to cell array
   
-  row <- which(adj != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
-  column <- which(adj != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
+  row <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
+  column <- which(adj != 0, arr.ind = TRUE)[, 2] ## get column indices of non-zero elements
 
-  E <- rep(list(list()), length(row)) # initializes a list of empty lists
+  E <- rep(list(list()), length(row)) ## initializes a list of empty lists
 
-  # fill in each list with corresponding row and column indices
+  ## fill in each list with corresponding row and column indices
   for(i in 1:length(row)) {
     E[[i]] <- c(row[i], column[i])
   }
@@ -166,21 +167,16 @@ adj2cell <- function(adj) {
 }
 
 adj2ineq <- function(adj) {
-  # converts an adjacency matrix to an inequality coefficient matrix for monotonic regression
+  ## converts an adjacency matrix to an inequality coefficient matrix for monotonic regression
   
-  i <- which(adj != 0, arr.ind = TRUE)[, 1] # get row indices of non-zero elements
-  j <- which(adj != 0, arr.ind = TRUE)[, 2] # get column indices of non-zero elements
-  s <- t(adj)[t(adj) != 0] # get values of non-zero elements, need to transpose to get correct order
+  i <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
+  j <- which(adj != 0, arr.ind = TRUE)[, 2] ## get column indices of non-zero elements
+  s <- t(adj)[t(adj) != 0] ## get values of non-zero elements, need to transpose to get correct order
 
-  print(i)
-  print(j)
-  
-  # initialize inequality matrix with zeros
+  ## initialize inequality matrix with zeros
   Aineq <- matrix(0, nrow = length(i), ncol = nrow(adj)) 
-
-  print(Aineq)
   
-  # fill in matrix with inequality coefficients
+  ## fill in matrix with inequality coefficients
   for(k in 1:length(i)) {
     Aineq[k, i[k]] <- 1;
     Aineq[k, j[k]] <- -1;
@@ -190,17 +186,17 @@ adj2ineq <- function(adj) {
 }
 
 cell2adj <- function(nodes, E=list()) {
-  # converts a partial order model in cell array form to an adjacency matrix suitable for monotonic regression
+  ## converts a partial order model in cell array form to an adjacency matrix suitable for monotonic regression
   
   if(!is.list(E))
-    E <- list(E) # probably won't work unless input is a set of lists, TODO: ask john about this
+    E <- list(E)
 
   n <- length(nodes)
   
-  # initialize adjacency matrix with zeros
+  ## initialize adjacency matrix with zeros
   adj <- matrix(0, nrow = n, ncol = n)
 
-  # fill in adjacency matrix
+  ## fill in adjacency matrix
   if(length(E) != 0) {
     for(i in 1:length(E)) {
       if(length(E[[i]]) != 0) {
@@ -222,10 +218,10 @@ w <- diag(3)
 
 L <- MR1(y=c(2, 4, 8), w, E=A)
 
-print(L)
-
 ## read in data and convert to a list
 x <- matrix(scan('../matlab/x.dat'), ncol = 5, byrow = TRUE)
 
 output <- staSTATS(x)
-print(output)
+## print(output)
+
+staMR(x)
