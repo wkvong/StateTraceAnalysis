@@ -3,20 +3,141 @@
 library(limSolve)
 library(expm)
 
+## TODO: function documentation
+staCMR <- function(data, E = list()) {
+  tol <- 10e-5
+
+  if (!is.list(E)) {
+    E <- list(E)
+  }
+  
+  y <- data
+
+  if (!is.list(y)) {
+    y <- list(y)
+  }
+
+  if (!is.list(y[[1]])) {
+    y <- staSTATS(y)
+  }
+
+  output <- CMR(y, E)
+
+  ## TODO: set x/f/Eprime based on values from output
+  x <- 0
+  f <- 0
+  Eprime <- 0
+  
+  f[f < tol] <- 0
+
+  ## TODO: check this work
+  if (!is.list(data)) {
+    x <- x[[1]]
+    f <- f[1]
+  }
+
+  return(list(x, f, Eprime))
+}
+
+CMR <- function(y, E) {
+  ## TODO: clean up function documentation to R standards
+  ## coupled monotonic regression
+  ## y is a cell array of structured output from staSTATS (ie means, weights etc) 
+  ## E is a cell array of the starting partial order model: E for Edges
+  ## for example, if we want x3 <= x2 <= x1 and x4 <= x3 then
+  ## E = {[3 2 1] [4 3]}, and so on.
+  ## Fbar is the fit of the starting model -- 'Inf' is a good start
+  ## returns:
+  ## xystar = best fitting values
+  ## Fbar = weighted least squares fit
+  ## Estar = final partial order model 
+  ## exitflag = vector of exit flags for fits for each variable
+
+  L <- list()
+
+  if (is.list(E)) {
+    L[[1]] <- list()
+    L[[1]][[1]] <- cell2adj(1:length(y[[1]]$means), E)
+    names(L[[1]]) <- c("E")
+  }
+  else {
+    L[[1]] <- list()
+    L[[1]][[1]] <- E
+    names(L[[1]]) <- c("E")    
+  }
+
+  L[[1]][[2]] <- -Inf
+  Fbar <- Inf
+  EBar <- L[[1]][[1]] ## TODO: rewrite as L[[1]]$E?
+
+  while(length(L) > 0) {
+    Eprime <- L[[1]][[1]] ## TODO: rewrite with variables names?
+    Ffloor <- L[[1]][[2]]
+
+    L[[1]] <- NULL ## remove this element from the list
+    if (Ffloor < Fbar) {
+      output <- staMR(y, Eprime)
+      names(output) <- c("xPrime", "fits") ## TODO: add exitflag information
+      Ffit <- sum(output$fits)
+
+      if (Ffit < Fbar) {
+        feas <- Feasible(output$xPrime)
+        names(feas) <- c("flag", "idx")
+
+        if (feas$flag) {
+          Fbar <- Ffit
+          Ffits <- fits
+          xBar <- xPrime
+          EBar <- Eprime
+        }
+        else {
+          ## create two branches
+          end <- length(L)
+          L[[end + 1]] <- list()
+          L[[end + 1]][[1]] <- Eprime
+          ## TODO: finish this off
+        }
+      }
+    }
+  }
+
+  xStar <- xBar
+  EStar <- EBar
+
+  ## TODO: return exitflag
+  return(list(xStar, Ffits, EStar))
+}
+
+## TODO: test this function
+Feasible <- function(xx) {
+  flag <- 1
+  idx <- vector()
+  zero <- 1e-10
+  x <- matrix(0, length(xx[[1]]), length(xx))
+
+  for (i in 1:length(xx)) {
+    x[, i] <- xx[[i]]
+  }
+
+  u <- combn(1:nrow(x), 2)
+  d <- x[u[, 1], ] - x[u[, 2], ]
+}
+
+## TODO: function documentation
 staMR <- function(data, E = list()) {
   tol <- 10e-5
 
-  if(!is.list(E) & is.vector(E)) {
+  if (!is.list(E) & is.vector(E)) {
     E <- list(E) ## convert to list if vector is specified
   }
 
   y <- data
 
-  if(!is.list(y)) {
+  if (!is.list(y)) {
     y <- list(y)
   }
 
-  if(!is.list(y[[1]])) {
+  if (!is.list(y[[1]])) {
 
     y = staSTATS(y);
   }
@@ -38,7 +159,7 @@ staMR <- function(data, E = list()) {
   ## round numbers close to tolerance level
   f[f < tol] <- 0
 
-  ## if(!is.list(data)) {
+  ## if (!is.list(data)) {
   ##   x <- x[[1]] ## TODO: what does this do?
   ## }
 
@@ -57,7 +178,7 @@ staSTATS <- function(data) {
   
   y <- data
 
-  if(!is.list(data)) {
+  if (!is.list(data)) {
     y <- list(y)
   }
 
@@ -73,7 +194,7 @@ staSTATS <- function(data) {
     out[[1]] <- colMeans(yy)
     out[[2]] <- nrow(yy)
 
-    if(out[[2]] > 1) {
+    if (out[[2]] > 1) {
       out[[3]] <- cov(yy)
       out[[4]] <- nrow(yy)/diag(cov(yy))
     }
@@ -93,7 +214,7 @@ staSTATS <- function(data) {
     output[[idata]] <- out
   }
 
-  if(!is.list(output)) {
+  if (!is.list(output)) {
     output <- output[[1]]
   }
 
@@ -110,24 +231,24 @@ MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
 
   n <- length(y)
 
-  if(nrow(w) == 0 & ncol(w) == 0) {
+  if (nrow(w) == 0 & ncol(w) == 0) {
     w <- diag(n)
   }
 
-  if(is.matrix(E)) {
-    if(nrow(E) == 0 & ncol(E) == 0) {
+  if (is.matrix(E)) {
+    if (nrow(E) == 0 & ncol(E) == 0) {
       E <- matrix(0, n, n)
     }
   }
 
-  if(is.list(E)) {
+  if (is.list(E)) {
     adj <- cell2adj(1:n, E)
   }
   else {
     adj <- E
   }
 
-  if(sum(adj) > 0) {
+  if (sum(adj) > 0) {
     A <- -adj2ineq(adj) ## turn adjacency matrix into a set of inequalities
     b <- matrix(0, nrow(A), 1)
   }
@@ -136,7 +257,7 @@ MR1 <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
     b <- NULL
   }
 
-  if(is.vector(w) | nrow(w) == 1) {
+  if (is.vector(w) | nrow(w) == 1) {
     w <- w[1, ]
     C <- diag(sqrt(w))
   }
@@ -188,7 +309,7 @@ adj2ineq <- function(adj) {
 cell2adj <- function(nodes, E=list()) {
   ## converts a partial order model in cell array form to an adjacency matrix suitable for monotonic regression
   
-  if(!is.list(E))
+  if (!is.list(E))
     E <- list(E)
 
   n <- length(nodes)
@@ -197,9 +318,9 @@ cell2adj <- function(nodes, E=list()) {
   adj <- matrix(0, nrow = n, ncol = n)
 
   ## fill in adjacency matrix
-  if(length(E) != 0) {
+  if (length(E) != 0) {
     for(i in 1:length(E)) {
-      if(length(E[[i]]) != 0) {
+      if (length(E[[i]]) != 0) {
         u <- t(combn(E[[i]], 2))
         for(j in 1:nrow(u)) {
           k1 <- which(nodes == u[j, 1])
@@ -211,6 +332,8 @@ cell2adj <- function(nodes, E=list()) {
   }
   return(adj)
 }
+
+## testing code
 
 A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 
@@ -225,3 +348,5 @@ output <- staSTATS(x)
 ## print(output)
 
 staMR(x)
+
+CMR(output, list(c(3, 2, 1), c(4, 3)))
