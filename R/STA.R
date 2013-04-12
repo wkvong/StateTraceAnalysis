@@ -1,13 +1,19 @@
-## TODO: use R coding style
-## TODO: replace output variables with better names + other variables
-## TODO: function documentation
-## TODO: move tests to another file?
+## TODO: Move tests to another file?
 
 library(limSolve)
 library(expm)
 library(R.matlab)
 
-StaCMR <- function(data, E = list()) {
+staCMR <- function(data, E = list()) {
+  ## Performs compound monotonic regression for state trace analysis
+  ##
+  ## Args:
+  ##   data: List of submatrices containing data
+  ##   E: List containing the starting partial order model
+  ##
+  ## Returns:
+  ##   TODO
+  
   tol <- 10e-5
 
   if (!is.list(E)) {
@@ -21,14 +27,13 @@ StaCMR <- function(data, E = list()) {
   }
 
   if (!is.list(y[[1]])) {
-    y <- StaSTATS(y)
+    y <- staSTATS(y)
   }
 
-  output <- CMR(y, E)
-
-  x <- output[[1]]
-  f <- output[[2]]
-  e.prime <- output[[3]]
+  CMR.output <- CMR(y, E)
+  x <- CMR.output$x.star
+  f <- CMR.output$f.fits
+  e.prime <- CMR.output$e.star
   
   f[f < tol] <- 0
 
@@ -37,56 +42,63 @@ StaCMR <- function(data, E = list()) {
     f <- f[1]
   }
 
-  return(list(x, f, e.prime))
+  output <- list(x, f, e.prime)
+  names(output) <- c("x", "f", "e.prime")
+  
+  return(output)
 }
 
 CMR <- function(y, E) {
-  ## TODO: clean up function documentation to R standards
-  ## coupled monotonic regression
-  ## y is a cell array of structured output from StaSTATS (ie means, weights etc) 
-  ## E is a cell array of the starting partial order model: E for Edges
-  ## for example, if we want x3 <= x2 <= x1 and x4 <= x3 then
-  ## E = {[3 2 1] [4 3]}, and so on.
-  ## f.bar is the fit of the starting model -- 'Inf' is a good start
-  ## returns:
-  ## x.star = best fitting values
-  ## f.bar = weighted least squares fit
-  ## e.star = final partial order model 
-  ## exitflag = vector of exit flags for fits for each variable
+  ## Coupled/Compound Monotonic Regression
+  ## 
+  ## Args:
+  ##   y: A list of structured output from staSTATS (ie means, weights etc) 
+  ##   E: A list of the starting partial order model: E for Edges
+  ##      for example, if we want x3 <= x2 <= x1 and x4 <= x3 then
+  ##      E = list(c(3, 2, 1), c(4, 3)) and so on.
+  ##
+  ## Returns a list with the following items:
+  ##   x.star: Best fitting values
+  ##   f.bar: Weighted least squares fit
+  ##   e.star: Final partial order model 
+  ##   exitflag: Vector of exit flags for fits for each variable
 
   L <- list()
 
   if (is.list(E)) {
     L[[1]] <- list()
-    L[[1]][[1]] <- Cell2Adj(1:length(y[[1]]$means), E)
+    L[[1]][[1]] <- Cell2Adj(1:length(y[[1]]$means), E) ## E
   }
   else {
     L[[1]] <- list()
     L[[1]][[1]] <- E
   }
 
-  L[[1]][[2]] <- -Inf
+  L[[1]][[2]] <- -Inf ## F
 
   f.bar <- Inf
   e.bar <- L[[1]][[1]]
 
+  exitflag <- list()
+  
   while(length(L) > 0) {
     e.prime <- L[[1]][[1]]
     f.floor <- L[[1]][[2]]
 
-    L[[1]] <- NULL ## remove this element from the list
+    L[[1]] <- NULL ## Removes the first element from the list
 
     if (f.floor < f.bar) {
-      output <- StaMR(y, e.prime)
-      x.prime <- output[[1]]
-      fits <- output[[2]]
-
+      staMR.output <- staMR(y, e.prime)
+      x.prime <- staMR.output$x
+      fits <- staMR.output$f
+      exitflag <- staMR.output$exitflag
+      
       f.fit <- sum(fits)
 
       if (f.fit < f.bar) {
-        feas <- Feasible(x.prime)
-        flag <- feas[[1]]
-        idx <- feas[[2]]
+        feas <- Feasible(x.prime) ## Check for feasible solution
+        flag <- feas$flag
+        idx <- feas$idx
 
         if (flag) {
           f.bar <- f.fit
@@ -95,7 +107,7 @@ CMR <- function(y, E) {
           e.bar <- e.prime
         }
         else {
-          ## create two branches
+          ## Create two branches
           end <- length(L) + 1
           L[[end]] <- list()
           L[[end + 1]] <- list()
@@ -114,35 +126,43 @@ CMR <- function(y, E) {
   x.star <- x.bar
   e.star <- e.bar
 
-  ## TODO: return exitflag
-  return(list(x.star, f.fits, e.star))
+  output <- list(x.star, f.fits, e.star, exitflag)
+  names(output) <- c("x.star", "f.fits", "e.star", "exitflag")
+  
+  return(output)
 }
 
-## TODO: rename xx variable?
-Feasible <- function(xx) {
+Feasible <- function(x.prime) {
+  ## Determines if there is a feasible solution (to what?)
+  ##
+  ## Args:
+  ##   x.prime: List of possible solutions
+  ##
+  ## Returns:
+  ##   True if there is a feasible solution, otherwise the largest inversion 
+  
   flag <- 1
   idx <- vector()
   tol <- 1e-10
-  x <- matrix(0, length(xx[[1]]), length(xx))
+  x <- matrix(0, length(x.prime[[1]]), length(x.prime))
   
-  for (i in 1:length(xx)) {
-    x[, i] <- xx[[i]]
+  for (i in 1:length(x.prime)) {
+    x[, i] <- x.prime[[i]]
   }
 
   u <- combn(1:nrow(x), 2)
-  u <- t(u) ## transpose u to be consistent with matlab
+  u <- t(u) ## Transpose u to be consistent with matlab
   d <- x[u[, 1], ] - x[u[, 2], ]
 
   k <- which(abs(d) <= tol) 
-  d[k] <- 0 ## set zero to any tiny differences
-  d <- sign(d) ## convert to signs
+  d[k] <- 0 ## Set zero to any tiny differences
+  d <- sign(d) ## Convert differences to signs
 
-  ## TODO: check if this can be better written
   if (is.vector(d)) {
     s <- abs(d) - abs(d)
   }
   else {
-    s <- rowSums(abs(d)) - abs(rowSums(d)) ## s > 0 if signs of difference are not equal
+    s <- rowSums(abs(d)) - abs(rowSums(d)) ## If signs of difference are not equal then s > 0
   }
     
   k <- which(s > 0)
@@ -150,16 +170,29 @@ Feasible <- function(xx) {
     flag <- 0
     idx <- u[k[1], ]
   }
+
+  output <- list(flag, idx)
+  names(output) <- c("flag", "idx")
   
-  return(list(flag, idx))
+  return(output)
 }
 
-## TODO: function documentation
-StaMR <- function(data, E = list()) {
+staMR <- function(data, E = list()) {
+  ## Fits a monotonic regression mode for state trace analysis according
+  ## to a specified partial order
+  ##
+  ## Args:
+  ##   data: A list of data or structured output from staSTATS
+  ##   E: A list or vector containing the partial ordering
+  ##
+  ## Returns a list with the following items:
+  ##   x: Best fitting monotonic regression values to y-means
+  ##   f: Fit statistic
+
   tol <- 10e-5
 
   if (!is.list(E) & is.vector(E)) {
-    E <- list(E) ## convert to list if vector is specified
+    E <- list(E) ## Convert to list if vector is specified
   }
 
   y <- data
@@ -169,42 +202,46 @@ StaMR <- function(data, E = list()) {
   }
 
   if (!is.list(y[[1]])) {
-    y = StaSTATS(y);
+    y = staSTATS(y);
   }
   
   x <- list()
   f <- rep(0, length(y))
-  ## TODO: exitflag information
+  exitflag <- list()
 
   for(i in 1:length(y)) {
-    yy <- y[[i]] ## TODO: rename?
-
-    output <- MR(yy$means, yy$weights, E)
-    
-    x[[i]] <- output$X
-    f[i] <- output$solutionNorm
-    ## TODO: exit flag
+    y.i <- y[[i]]
+    MR.output <- MR(y.i$means, y.i$weights, E)
+    x[[i]] <- MR.output$x
+    f[i] <- MR.output$fit
+    exitflag[i] <- MR.output$exitflag
   }
 
-  ## round numbers close to tolerance level
+  ## Round numbers close to tolerance level
   f[f < tol] <- 0
 
   if (!is.list(data)) {
     x <- x[[1]] ## TODO: check what this does?
   }
 
-  ## TODO: return exitflag as well
-  return(list(x, f))
+  output <- list(x, f, exitflag)
+  names(output) <- c("x", "f", "exitflag")
+  
+  return(output)
 }
 
-StaSTATS <- function(data) {
-  ## TODO: reformat function documentation to fit R standards
-  ## data is NSUB x NCOND sub-matrix or cell array of sub-matrices
-  ## returns means, cov, nsub and weights
-  ## output.means = observed means
-  ## output.n = number of subjects
-  ## output.cov = observed covariance matrix
-  ## output.weights = weight matrix for monotonic regression
+staSTATS <- function(data) {
+  ## Calculates statistics for state trace analysis
+  ##
+  ## Args:
+  ##   data: A list of submatrices contain nsub x ncond matrices
+  ##
+  ## Returns a list with the following items:
+  ##   means: Observed means
+  ##   n: Number of subjects
+  ##   cov: Observed covariance matrix
+  ##   weights: Weight matrix for monotonic regression
+  ##   lm: TODO
   
   y <- data
 
@@ -212,37 +249,35 @@ StaSTATS <- function(data) {
     y <- list(y)
   }
 
-  ## TODO: rename output variable
   output <- rep(list(list()), length(y))
 
   for(i in 1:length(y)) {
-    yy <- y[[i]] ## TODO: rename yy
-    yy <- yy[complete.cases(yy), ] ## delete rows with NAs
+    y.i <- y[[i]]
+    y.i <- y.i[complete.cases(y.i), ] ## delete rows with NAs
 
-    ## TODO: change how list is named?
     out <- list()
     out.names <- c("means", "n", "cov", "weights", "lm")
 
-    out[[1]] <- colMeans(yy)
-    out[[2]] <- nrow(yy)
+    out[[1]] <- colMeans(y.i)
+    out[[2]] <- nrow(y.i)
 
     if (out[[2]] > 1) {
-      out[[3]] <- cov(yy)
-      out[[4]] <- nrow(yy)/diag(cov(yy))
+      out[[3]] <- cov(y.i)
+      out[[4]] <- nrow(y.i)/diag(cov(y.i))
     }
     else {
-      out[[3]] <- matrix(0, nrow=ncol(yy), ncol=ncol(yy))
-      out[[4]] <- matrix(1, nrow=ncol(yy), ncol=1)
+      out[[3]] <- matrix(0, nrow=ncol(y.i), ncol=ncol(y.i))
+      out[[4]] <- matrix(1, nrow=ncol(y.i), ncol=1)
     }
 
-    ## tranpose weight matrix
+    ## Tranpose weight matrix
     out[[4]] <- t(out[[4]])
     out[[5]] <- diag(diag(out[[3]]))
 
-    ## give names to out list
+    ## Add variable names to list
     names(out) <- out.names
 
-    ## add to output
+    ## Add to output
     output[[i]] <- out
   }
 
@@ -253,14 +288,22 @@ StaSTATS <- function(data) {
   return(output)
 }
 
-## TODO: fix function documentation
 MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
-  ## Uses lsqlin to solve standard monotonic regression problems
+  ## Uses lsqlin to solve a standard monotonic regression problem
   ## MR conducts monotonic regression on each column separately
-  ## y is a vector of values - the data
-  ## w is the weight matrix for the (lsqlin) fit: either a vector of positive
-  ## numbers or a positive definite matrix
-  ## E is an adjacency matrix coding the partial order model
+  ##
+  ## Args:
+  ##   y: Vector of values - the data
+  ##   w: Weight matrix for the (lsqlin) fit: either a vector of positive
+  ##      numbers or a positive definite matrix
+  ##   E: Adjacency matrix coding the partial order model
+  ##
+  ## Returns a list containing the following:
+  ##   x: Best fitting values
+  ##   resid: TODO
+  ##   fit: Weighted least squares fit
+  ##   exitflag: Vector of exit flags for fits for each variable
+  ##   output: Type of optimization used
 
   n <- length(y)
 
@@ -282,7 +325,7 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   }
 
   if (sum(adj) > 0) {
-    A <- -Adj2Ineq(adj) ## turn adjacency matrix into a set of inequalities
+    A <- -Adj2Ineq(adj) ## Turn adjacency matrix into a set of inequalities
     b <- matrix(0, nrow(A), 1)
   }
   else {
@@ -295,27 +338,34 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
     C <- diag(sqrt(w))
   }
   else {
-    C <- expm::sqrtm(w) ## use expm version of this function
+    C <- expm::sqrtm(w) ## Use expm version of this function
   }
 
   d <- C %*% y
 
-  ## run weighted least squares regression with inequality constraints
+  ## Run weighted least squares regression with inequality constraints
   L <- lsei(A = C, B = d, G = A, H = b, type=2, verbose = TRUE) 
-
+  names(L) <- c("x", "resid", "fit", "exitflag", "output")
+  
   return(L)
 }
 
-## TODO: fix function documentation
+
 Adj2Cell <- function(adj) {
-  ## converts adjacency matrix to cell array
+  ## Converts adjacency matrix to list
+  ##
+  ## Args:
+  ##   adj: Adjacency matrix
+  ##
+  ## Returns:
+  ##   List
   
-  row <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
-  column <- which(adj != 0, arr.ind = TRUE)[, 2] ## get column indices of non-zero elements
+  row <- which(adj != 0, arr.ind = TRUE)[, 1] ## Get row indices of non-zero elements
+  column <- which(adj != 0, arr.ind = TRUE)[, 2] ## Get column indices of non-zero elements
 
-  E <- rep(list(list()), length(row)) ## initializes a list of empty lists
+  E <- rep(list(list()), length(row)) ## Initializes a list of empty lists
 
-  ## fill in each list with corresponding row and column indices
+  ## Fill in each list with corresponding row and column indices
   for(i in 1:length(row)) {
     E[[i]] <- c(row[i], column[i])
   }
@@ -324,16 +374,22 @@ Adj2Cell <- function(adj) {
 }
 
 Adj2Ineq <- function(adj) {
-  ## converts an adjacency matrix to an inequality coefficient matrix for monotonic regression
+  ## Converts an adjacency matrix to an inequality coefficient matrix 
+  ##
+  ## Args:
+  ##   adj: Adjacency matrix
+  ##
+  ## Returns:
+  ##   Matrix containing inequality coefficients
   
-  i <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
-  j <- which(adj != 0, arr.ind = TRUE)[, 2] ## get column indices of non-zero elements
-  s <- t(adj)[t(adj) != 0] ## get values of non-zero elements, need to transpose to get correct order
+  i <- which(adj != 0, arr.ind = TRUE)[, 1] ## Get row indices of non-zero elements
+  j <- which(adj != 0, arr.ind = TRUE)[, 2] ## Get column indices of non-zero elements
+  s <- t(adj)[t(adj) != 0] ## Get values of non-zero elements, need to transpose to get correct order
 
-  ## initialize inequality matrix with zeros
+  ## Initialize inequality matrix with zeros
   Aineq <- matrix(0, nrow = length(i), ncol = nrow(adj)) 
   
-  ## fill in matrix with inequality coefficients
+  ## Fill in matrix with inequality coefficients
   for(k in 1:length(i)) {
     Aineq[k, i[k]] <- 1;
     Aineq[k, j[k]] <- -1;
@@ -343,17 +399,24 @@ Adj2Ineq <- function(adj) {
 }
 
 Cell2Adj <- function(nodes, E=list()) {
-  ## converts a partial order model in cell array form to an adjacency matrix suitable for monotonic regression
+  ## Converts a partial order model in list form to an adjacency matrix suitable for monotonic regression
+  ##
+  ## Args:
+  ##   nodes: TODO?
+  ##   E: List containing the partial order model
+  ##
+  ## Returns:
+  ##   Adjacency matrix for monotonic regression
   
   if (!is.list(E))
     E <- list(E)
 
   n <- length(nodes)
   
-  ## initialize adjacency matrix with zeros
+  ## Initialize adjacency matrix with zeros
   adj <- matrix(0, nrow = n, ncol = n)
 
-  ## fill in adjacency matrix
+  ## Fill in adjacency matrix
   if (length(E) != 0) {
     for(i in 1:length(E)) {
       if (length(E[[i]]) != 0) {
@@ -369,24 +432,19 @@ Cell2Adj <- function(nodes, E=list()) {
   return(adj)
 }
 
+## TODO: move to another file or to tests/ folder
 ## testing code
 
 ## A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
-
 ## w <- diag(3)
-
 ## L <- MR(y=c(2, 4, 8), w, E=A)
 
 ## ## read in data and convert to a list
 ## x <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE)
 
-## output <- StaSTATS(x)
-## ## print(output)
-
-## StaMR(x)
-
-## CMR(output, list(c(3, 2, 1), c(4, 3)))
+## output <- staSTATS(x)
+## staMR(x)
 
 cmrData <- readMat('../data/nakabayashi.mat')
 cmrData <- cmrData$data
-StaCMR(cmrData)
+staCMR(cmrData)
