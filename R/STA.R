@@ -7,7 +7,7 @@ library(limSolve)
 library(expm)
 library(R.matlab)
 
-staCMR <- function(data, E = list()) {
+StaCMR <- function(data, E = list()) {
   tol <- 10e-5
 
   if (!is.list(E)) {
@@ -21,7 +21,7 @@ staCMR <- function(data, E = list()) {
   }
 
   if (!is.list(y[[1]])) {
-    y <- staSTATS(y)
+    y <- StaSTATS(y)
   }
 
   output <- CMR(y, E)
@@ -43,22 +43,22 @@ staCMR <- function(data, E = list()) {
 CMR <- function(y, E) {
   ## TODO: clean up function documentation to R standards
   ## coupled monotonic regression
-  ## y is a cell array of structured output from staSTATS (ie means, weights etc) 
+  ## y is a cell array of structured output from StaSTATS (ie means, weights etc) 
   ## E is a cell array of the starting partial order model: E for Edges
   ## for example, if we want x3 <= x2 <= x1 and x4 <= x3 then
   ## E = {[3 2 1] [4 3]}, and so on.
   ## f.bar is the fit of the starting model -- 'Inf' is a good start
   ## returns:
-  ## xystar = best fitting values
+  ## x.star = best fitting values
   ## f.bar = weighted least squares fit
-  ## Estar = final partial order model 
+  ## e.star = final partial order model 
   ## exitflag = vector of exit flags for fits for each variable
 
   L <- list()
 
   if (is.list(E)) {
     L[[1]] <- list()
-    L[[1]][[1]] <- cell2adj(1:length(y[[1]]$means), E)
+    L[[1]][[1]] <- Cell2Adj(1:length(y[[1]]$means), E)
   }
   else {
     L[[1]] <- list()
@@ -77,14 +77,14 @@ CMR <- function(y, E) {
     L[[1]] <- NULL ## remove this element from the list
 
     if (f.floor < f.bar) {
-      output <- staMR(y, e.prime)
+      output <- StaMR(y, e.prime)
       x.prime <- output[[1]]
       fits <- output[[2]]
 
       f.fit <- sum(fits)
 
       if (f.fit < f.bar) {
-        feas <- feasible(x.prime)
+        feas <- Feasible(x.prime)
         flag <- feas[[1]]
         idx <- feas[[2]]
 
@@ -119,7 +119,7 @@ CMR <- function(y, E) {
 }
 
 ## TODO: rename xx variable?
-feasible <- function(xx) {
+Feasible <- function(xx) {
   flag <- 1
   idx <- vector()
   tol <- 1e-10
@@ -138,7 +138,7 @@ feasible <- function(xx) {
   d <- sign(d) ## convert to signs
 
   ## TODO: check if this can be better written
-  if(is.vector(d)) {
+  if (is.vector(d)) {
     s <- abs(d) - abs(d)
   }
   else {
@@ -146,7 +146,7 @@ feasible <- function(xx) {
   }
     
   k <- which(s > 0)
-  if(length(k) != 0) {
+  if (length(k) != 0) {
     flag <- 0
     idx <- u[k[1], ]
   }
@@ -155,7 +155,7 @@ feasible <- function(xx) {
 }
 
 ## TODO: function documentation
-staMR <- function(data, E = list()) {
+StaMR <- function(data, E = list()) {
   tol <- 10e-5
 
   if (!is.list(E) & is.vector(E)) {
@@ -169,7 +169,7 @@ staMR <- function(data, E = list()) {
   }
 
   if (!is.list(y[[1]])) {
-    y = staSTATS(y);
+    y = StaSTATS(y);
   }
   
   x <- list()
@@ -197,7 +197,7 @@ staMR <- function(data, E = list()) {
   return(list(x, f))
 }
 
-staSTATS <- function(data) {
+StaSTATS <- function(data) {
   ## TODO: reformat function documentation to fit R standards
   ## data is NSUB x NCOND sub-matrix or cell array of sub-matrices
   ## returns means, cov, nsub and weights
@@ -275,14 +275,14 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   }
 
   if (is.list(E)) {
-    adj <- cell2adj(1:n, E)
+    adj <- Cell2Adj(1:n, E)
   }
   else {
     adj <- E
   }
 
   if (sum(adj) > 0) {
-    A <- -adj2ineq(adj) ## turn adjacency matrix into a set of inequalities
+    A <- -Adj2Ineq(adj) ## turn adjacency matrix into a set of inequalities
     b <- matrix(0, nrow(A), 1)
   }
   else {
@@ -307,7 +307,7 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
 }
 
 ## TODO: fix function documentation
-adj2cell <- function(adj) {
+Adj2Cell <- function(adj) {
   ## converts adjacency matrix to cell array
   
   row <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
@@ -323,7 +323,7 @@ adj2cell <- function(adj) {
   return(E)
 }
 
-adj2ineq <- function(adj) {
+Adj2Ineq <- function(adj) {
   ## converts an adjacency matrix to an inequality coefficient matrix for monotonic regression
   
   i <- which(adj != 0, arr.ind = TRUE)[, 1] ## get row indices of non-zero elements
@@ -342,7 +342,7 @@ adj2ineq <- function(adj) {
   return(Aineq)
 }
 
-cell2adj <- function(nodes, E=list()) {
+Cell2Adj <- function(nodes, E=list()) {
   ## converts a partial order model in cell array form to an adjacency matrix suitable for monotonic regression
   
   if (!is.list(E))
@@ -380,13 +380,13 @@ cell2adj <- function(nodes, E=list()) {
 ## ## read in data and convert to a list
 ## x <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE)
 
-## output <- staSTATS(x)
+## output <- StaSTATS(x)
 ## ## print(output)
 
-## staMR(x)
+## StaMR(x)
 
 ## CMR(output, list(c(3, 2, 1), c(4, 3)))
 
 cmrData <- readMat('../data/nakabayashi.mat')
 cmrData <- cmrData$data
-staCMR(cmrData)
+StaCMR(cmrData)
