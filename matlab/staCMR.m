@@ -18,6 +18,7 @@ end
 if ~isstruct(y{1})
     y = staSTATS(y);
 end
+
 [x f Eprime] = CMRv4 (y, E);
 f(find(f<tol))=0;
 if ~iscell(data)

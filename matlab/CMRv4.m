@@ -25,12 +25,16 @@ EBar = L(1).E;
 while numel(L)>0
     Eprime = L(1).E;
     Ffloor = L(1).F;
+
     L(1) = []; %remove this node
     if Ffloor < Fbar
         [xPrime fits exitflag] = staMR(y, Eprime); % this is where lsqlin comes in
+
         Ffit = sum(fits);
+
         if Ffit < Fbar
             [flag idx] = Feasible(xPrime); %if flag == true, it's feasible, otherwise give me an index
+            
             if flag
                 Fbar = Ffit;
                 Ffits = fits;
@@ -38,10 +42,13 @@ while numel(L)>0
                 EBar = Eprime;
             else
                 %create two branches
-                L(end+1).E = Eprime; L(end).E(idx(1),idx(2)) = 1; % (i,j) branch
+                L(end+1).E = Eprime;
+                L(end).E(idx(1),idx(2)) = 1; % (i,j) branch
                 L(end).F = Ffit;
-                L(end+1).E = Eprime; L(end).E(idx(2),idx(1)) = 1; % (j,i) branch
+                L(end+1).E = Eprime;
+                L(end).E(idx(2),idx(1)) = 1; % (j,i) branch
                 L(end).F = Ffit;
+
             end
         end
     end
@@ -55,15 +62,21 @@ function [flag idx] = Feasible(xx)
 % this is the biggest difference from CMRv2
 flag = 1; idx = []; zero = 1e-010;
 x = zeros(numel(xx{1}),numel(xx));
+
 for ivar = 1:numel(xx), x(:,ivar) = xx{ivar}; end
 
 u = nchoosek(1:size(x,1),2);
 d = x(u(:,1),:) - x(u(:,2),:);
-k = find(abs(d) <= zero); d(k) = 0;  % set to zero any tiny differences
+
+k = find(abs(d) <= zero); d(k) = 0;  % set to zero any tiny
+                                     % differences
 d = sign(d); % convert to signs
-s = sum(abs(d),2)-abs(sum(d,2)); % s > 0 if signs of differences not equal 
+s = sum(abs(d),2)-abs(sum(d,2)); % s > 0 if signs of differences
+                                 % not equal
+
 k = find(s > 0);
 if ~isempty(k)
     flag=0;
-    idx = u(k(1),:);   % return the indices of first discordant pair
+    idx = u(k(1),:);   % return the indices of first discordant
+                       % pair
 end

@@ -1,7 +1,8 @@
-## TODO: give names to lists and call them when appropriate
+## TODO: use R coding style
 
 library(limSolve)
 library(expm)
+library(R.matlab)
 
 ## TODO: function documentation
 staCMR <- function(data, E = list()) {
@@ -23,14 +24,12 @@ staCMR <- function(data, E = list()) {
 
   output <- CMR(y, E)
 
-  ## TODO: set x/f/Eprime based on values from output
-  x <- 0
-  f <- 0
-  Eprime <- 0
+  x <- output[[1]]
+  f <- output[[2]]
+  Eprime <- output[[3]]
   
   f[f < tol] <- 0
 
-  ## TODO: check this work
   if (!is.list(data)) {
     x <- x[[1]]
     f <- f[1]
@@ -58,69 +57,105 @@ CMR <- function(y, E) {
   if (is.list(E)) {
     L[[1]] <- list()
     L[[1]][[1]] <- cell2adj(1:length(y[[1]]$means), E)
-    names(L[[1]]) <- c("E")
   }
   else {
     L[[1]] <- list()
     L[[1]][[1]] <- E
-    names(L[[1]]) <- c("E")    
   }
 
   L[[1]][[2]] <- -Inf
+
   Fbar <- Inf
-  EBar <- L[[1]][[1]] ## TODO: rewrite as L[[1]]$E?
+  eBar <- L[[1]][[1]]
 
   while(length(L) > 0) {
-    Eprime <- L[[1]][[1]] ## TODO: rewrite with variables names?
+    Eprime <- L[[1]][[1]]
     Ffloor <- L[[1]][[2]]
 
+    ## print(Eprime)
+    ## print(Ffloor)
+    
     L[[1]] <- NULL ## remove this element from the list
+
+    ## print(Ffloor)
+    ## print(Fbar)
+    
     if (Ffloor < Fbar) {
       output <- staMR(y, Eprime)
-      names(output) <- c("xPrime", "fits") ## TODO: add exitflag information
-      Ffit <- sum(output$fits)
+      xPrime <- output[[1]]
+      fits <- output[[2]]
+
+      Ffit <- sum(fits)
 
       if (Ffit < Fbar) {
-        feas <- Feasible(output$xPrime)
-        names(feas) <- c("flag", "idx")
+        feas <- feasible(xPrime)
+        flag <- feas[[1]]
+        idx <- feas[[2]]
 
-        if (feas$flag) {
+        if (flag) {
+          # TODO: check later
           Fbar <- Ffit
           Ffits <- fits
           xBar <- xPrime
-          EBar <- Eprime
+          eBar <- Eprime
         }
         else {
           ## create two branches
-          end <- length(L)
+          end <- length(L) + 1
+          L[[end]] <- list()
           L[[end + 1]] <- list()
-          L[[end + 1]][[1]] <- Eprime
-          ## TODO: finish this off
+
+          L[[end]][[1]] <- Eprime
+          L[[end]][[1]][idx[1], idx[2]] <- 1 ## (i,j) branch
+          L[[end]][[2]] <- Ffit
+          L[[end+1]][[1]] <- Eprime
+          L[[end+1]][[1]][idx[2], idx[1]] <- 1 ## (j,i) branch
+          L[[end+1]][[2]] <- Ffit
         }
       }
     }
   }
 
   xStar <- xBar
-  EStar <- EBar
+  eStar <- eBar
 
   ## TODO: return exitflag
-  return(list(xStar, Ffits, EStar))
+  return(list(xStar, Ffits, eStar))
 }
 
 ## TODO: test this function
-Feasible <- function(xx) {
+feasible <- function(xx) {
   flag <- 1
   idx <- vector()
   zero <- 1e-10
   x <- matrix(0, length(xx[[1]]), length(xx))
-
+  
   for (i in 1:length(xx)) {
     x[, i] <- xx[[i]]
   }
 
   u <- combn(1:nrow(x), 2)
+  u <- t(u) ## transpose u to be consistent with matlab
   d <- x[u[, 1], ] - x[u[, 2], ]
+
+  k <- which(abs(d) <= zero) 
+  d[k] <- 0 ## set zero to any tiny differences
+  d <- sign(d) ## convert to signs
+  
+  if(is.vector(d)) {
+    s <- abs(d) - abs(d) ## TODO: check if ok
+  }
+  else {
+    s <- rowSums(abs(d)) - abs(rowSums(d)) ## s > 0 if signs of difference are not equal
+  }
+    
+  k <- which(s > 0)
+  if(length(k) != 0) {
+    flag <- 0
+    idx <- u[k[1], ]
+  }
+  
+  return(list(flag, idx))
 }
 
 ## TODO: function documentation
@@ -335,18 +370,22 @@ cell2adj <- function(nodes, E=list()) {
 
 ## testing code
 
-A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
+## A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
 
-w <- diag(3)
+## w <- diag(3)
 
-L <- MR1(y=c(2, 4, 8), w, E=A)
+## L <- MR1(y=c(2, 4, 8), w, E=A)
 
-## read in data and convert to a list
-x <- matrix(scan('../matlab/x.dat'), ncol = 5, byrow = TRUE)
+## ## read in data and convert to a list
+## x <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE)
 
-output <- staSTATS(x)
-## print(output)
+## output <- staSTATS(x)
+## ## print(output)
 
-staMR(x)
+## staMR(x)
 
-CMR(output, list(c(3, 2, 1), c(4, 3)))
+## CMR(output, list(c(3, 2, 1), c(4, 3)))
+
+cmrData <- readMat('../data/nakabayashi.mat')
+cmrData <- cmrData$data
+staCMR(cmrData[1])
