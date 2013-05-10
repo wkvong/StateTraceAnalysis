@@ -1,8 +1,116 @@
 ## TODO: Move tests to another file?
+## TODO: fix output/names(output) to a single line?
 
 library(limSolve)
 library(expm)
 library(R.matlab)
+library(foreach)
+library(doParallel)
+
+CMRfits <- function(nsample, data, E = list(), E1 = list()) {
+  if (is.list(data)) {
+    type <- 1
+    nvar <- length(unique(data[, 3])) ## TODO: check this is right with real data
+  }
+  else {
+    type <- 0
+    nvar <- length(data)
+  }
+
+  if (type == 1) {
+    ys <- outSTATS(data)
+  }
+  else {
+    ys <- staSTATS(data)
+  }
+
+  if (length(E1) == 0) {
+    if (length(E) != 0) {
+      staMR.output <- staMR(ys, E)
+      x2 <- staMR.output$x
+      f2 <- staMR.output$f
+    }
+    else {
+      f2 <- 0
+    }
+
+    staCMR.output <- staCMR(ys, E)
+    x1 <- staCMR.output$x
+    f1 <- staCMR.output$f
+  }
+  else {
+      staMR.output <- staCMR(ys, E)
+      x2 <- staMR.output$x
+      f2 <- staMR.output$f
+      staMR.output <- staCMR(ys, E1)
+      x1 <- staMR.output$x
+      f1 <- staMR.output$f
+    }
+
+  f <- f1 - f2
+  datafit <- list(f, sum(f))
+
+  ## TODO: set rng seed
+  fits <- matrix(0, nsample, nvar)
+
+  ## initiate parallel code, TODO: use snow for windows systems, let user specify no of cpu cores etc.
+  cl <- makeCluster(4)
+  registerDoParallel(cl)
+  foreach(i=1:nsample) %dopar% {
+    ## bootstrap sample
+    yb <- bootstrap(data, type)
+
+    ## fit 1D model to bootstrap data
+    if (type == 0) {
+      y <- staSTATS(yb)
+    }
+    else {
+      y <- outSTATS(yb)
+    }
+
+    ## resample model
+    yr <- resample(x, y, type)
+
+    y <- yr
+
+    if (length(E1) == 0) {
+      if (length(E) != 0) {
+        staMR.output <- staMR(y, E)
+        x2 <- staMR.output$x
+        f2 <- staMR.output$f
+      }
+      else {
+        f2 <- 0
+      }
+    }
+    else {
+      staMR.output <- staCMR(y, E)
+      x2 <- staMR.output$x
+      f2 <- staMR.output$f
+      staMR.output <- staCMR(y, E1)
+      x1 <- staMR.output$x
+      f1 <- staMR.output$f
+    }
+    
+    f <- f1 - f2
+    fits(i, ) <-  f ## store Monte Carlo fits ## TODO: check type of fits to match
+  }
+
+  fits <- c(fits, sum(fits)) ## TODO: add sum of fits column?
+
+  p <- rep(0, length(datafit)) ## calculate p
+
+  for(i in 1:nrow(fits)) {
+    ## TODO: fix!
+    k <- which(fits[, i] >= datafit[i]) 
+    p[i] <- length(k)/nsample 
+  }
+
+  output <- list(p, datafit, fits)
+  names(output) <- c("p", "datafit", "fits")
+  
+  return(output)
+}
 
 staCMR <- function(data, E = list()) {
   ## Performs compound monotonic regression for state trace analysis
