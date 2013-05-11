@@ -4,24 +4,27 @@
 library(limSolve)
 library(expm)
 library(R.matlab)
+library(MASS)
 library(foreach)
 library(doParallel)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
-  if (is.list(data)) {
-    type <- 1
-    nvar <- length(unique(data[, 3])) ## TODO: check this is right with real data
-  }
-  else {
-    type <- 0
-    nvar <- length(data)
-  }
 
-  if (type == 1) {
-    ys <- outSTATS(data)
+  ## TODO: ask John about this data format later?
+  ## if (is.list(data)) {
+  ##   type <- 1
+  ##   nvar <- length(unique(data[, 3])) ## TODO: check this is right with real data
+  ## }
+  ## else {
+  type <- 0
+  nvar <- length(data)
+  ## }
+
+  if (type == 0) {
+    ys <- staSTATS(data)
   }
   else {
-    ys <- staSTATS(data)
+    ys <- outSTATS(data)
   }
 
   if (length(E1) == 0) {
@@ -39,24 +42,27 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
     f1 <- staCMR.output$f
   }
   else {
-      staMR.output <- staCMR(ys, E)
-      x2 <- staMR.output$x
-      f2 <- staMR.output$f
-      staMR.output <- staCMR(ys, E1)
-      x1 <- staMR.output$x
-      f1 <- staMR.output$f
+      staCMR.output <- staCMR(ys, E)
+      x2 <- staCMR.output$x
+      f2 <- staCMR.output$f
+      staCMR.output <- staCMR(ys, E1)
+      x1 <- staCMR.output$x
+      f1 <- staCMR.output$f
     }
 
   f <- f1 - f2
-  datafit <- list(f, sum(f))
+  datafit <- c(f, sum(f))
 
-  ## TODO: set rng seed
+  ## TODO: make seed same as matlab to compare random samples?
+  set.seed(as.numeric(Sys.time()))
   fits <- matrix(0, nsample, nvar)
-
+  
   ## initiate parallel code, TODO: use snow for windows systems, let user specify no of cpu cores etc.
   cl <- makeCluster(4)
   registerDoParallel(cl)
-  foreach(i=1:nsample) %dopar% {
+
+  ## TODO: make parallel again
+  for (i in 1:nsample) {
     ## bootstrap sample
     yb <- bootstrap(data, type)
 
@@ -68,6 +74,17 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       y <- outSTATS(yb)
     }
 
+    if (length(E1) == 0) {
+      staCMR.output <- staCMR(y, E)
+      x <- staCMR.output$x
+      f <- staCMR.output$f
+    }
+    else {
+      staCMR.output <- staCMR(y, E1)
+      x <- staCMR.output$x
+      f <- staCMR.output$f
+    }
+    
     ## resample model
     yr <- resample(x, y, type)
 
@@ -84,19 +101,25 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       }
     }
     else {
-      staMR.output <- staCMR(y, E)
-      x2 <- staMR.output$x
-      f2 <- staMR.output$f
-      staMR.output <- staCMR(y, E1)
-      x1 <- staMR.output$x
-      f1 <- staMR.output$f
+      staCMR.output <- staCMR(y, E)
+      x2 <- staCMR.output$x
+      f2 <- staCMR.output$f
+      staCMR.output <- staCMR(y, E1)
+      x1 <- staCMR.output$x
+      f1 <- staCMR.output$f
     }
     
     f <- f1 - f2
-    fits(i, ) <-  f ## store Monte Carlo fits ## TODO: check type of fits to match
+    fits[i, ] <-  f ## store Monte Carlo fits ## TODO: check type of fits to match
+
+    print(fits)
   }
 
-  fits <- c(fits, sum(fits)) ## TODO: add sum of fits column?
+  ## stop cluster
+  stopCluster(cl)
+
+  ## TODO: fix up 
+  ## fits <- c(fits, sum(fits)) ## TODO: add sum of fits column?
 
   p <- rep(0, length(datafit)) ## calculate p
 
@@ -115,11 +138,13 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 bootstrap <- function(y, type) {
   ## Draws bootstrap from data
 
+  yb <- list()
+  
   if (type == 0) {
     ## y in specific nsub x ncond format
 
     for (ivar in 1:length(y)) {
-      a <- y[ivar]
+      a <- y[[ivar]]
       nsub <- nrow(a)
       yy <- matrix(0, nrow(a), ncol(a))
       b <- rep(0, nsub)
@@ -129,17 +154,18 @@ bootstrap <- function(y, type) {
         for (isub in 1:nsub) {
           u <- sample(nsub)
           yy[isub, ] <- a[u[1], ]
-          b[isub] <- y[1]
+          b[isub] <- u[1]
         }
 
         v <- sum(b == b[1])
       }
-      yb[ivar] <- yy
+      yb[[ivar]] <- yy
     }
   }
   else {
     ## y is in the general format
-
+    ## TODO: check this works
+    
     cond <- unique(y[, 2]) ## TODO: fix up
     var <- unique(y[, 3])
 
@@ -156,8 +182,7 @@ bootstrap <- function(y, type) {
     }
   }
 
-  ## TODO
-  return()
+  return(yb)
 }
 
 ## TODO: fix up
@@ -166,14 +191,17 @@ resample <- function(x, y, type) {
 
   for (ivar in 1:length(x)) {
     if (type == 0) {
-      sigma <- y[ivar]$cov/y[ivar]$n
+      sigma <- y[[ivar]]$cov/y[[ivar]]$n
     }
     else {
-      sigma <- matrix(0, nrow(y[ivar]$cov), ncol(y[ivar]$cov))
-      k <- which(y[ivar]$n > 0)
-      sigma[k] <- y[ivar]$cov[k]/y[ivar]$n[k]
+      ## TODO: check this works!
+      sigma <- matrix(0, nrow(y[[ivar]]$cov), ncol(y[[ivar]]$cov))
+      k <- which(y[[ivar]]$n > 0)
+      sigma[k] <- y[[ivar]]$cov[k]/y[[ivar]]$n[k]
     }
-    yv[ivar]$means <- t(mvrnorm(x[ivar], sigma))
+
+    ## TODO: fix!!
+    yr[[ivar]]$means <- t(mvrnorm(mu=x[[ivar]], Sigma=sigma))
   }
 
   return(yr)
@@ -223,7 +251,7 @@ staCMR <- function(data, E = list()) {
   return(output)
 }
 
-CMR <- function(y, E) {
+CMR <- function(y, E = list()) {
   ## Coupled/Compound Monotonic Regression
   ## 
   ## Args:
@@ -428,7 +456,7 @@ staSTATS <- function(data) {
 
   for(i in 1:length(y)) {
     y.i <- y[[i]]
-    y.i <- y.i[complete.cases(y.i), ] ## delete rows with NAs
+    ## y.i <- y.i[complete.cases(y.i), ] ## delete rows with NAs
 
     out <- list()
     out.names <- c("means", "n", "cov", "weights", "lm")
@@ -620,6 +648,3 @@ Cell2Adj <- function(nodes, E=list()) {
 ## output <- staSTATS(x)
 ## staMR(x)
 
-cmrData <- readMat('../data/nakabayashi.mat')
-cmrData <- cmrData$data
-staCMR(cmrData)
