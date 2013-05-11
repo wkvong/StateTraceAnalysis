@@ -100,7 +100,7 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 
   p <- rep(0, length(datafit)) ## calculate p
 
-  for(i in 1:nrow(fits)) {
+  for (i in 1:nrow(fits)) {
     ## TODO: fix!
     k <- which(fits[, i] >= datafit[i]) 
     p[i] <- length(k)/nsample 
@@ -110,6 +110,73 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   names(output) <- c("p", "datafit", "fits")
   
   return(output)
+}
+
+bootstrap <- function(y, type) {
+  ## Draws bootstrap from data
+
+  if (type == 0) {
+    ## y in specific nsub x ncond format
+
+    for (ivar in 1:length(y)) {
+      a <- y[ivar]
+      nsub <- nrow(a)
+      yy <- matrix(0, nrow(a), ncol(a))
+      b <- rep(0, nsub)
+      v <- nsub
+
+      while (v == nsub) {
+        for (isub in 1:nsub) {
+          u <- sample(nsub)
+          yy[isub, ] <- a[u[1], ]
+          b[isub] <- y[1]
+        }
+
+        v <- sum(b == b[1])
+      }
+      yb[ivar] <- yy
+    }
+  }
+  else {
+    ## y is in the general format
+
+    cond <- unique(y[, 2]) ## TODO: fix up
+    var <- unique(y[, 3])
+
+    yb <- y
+
+    ## TODO: fix up
+    for(i in 1:length(var)) {
+      for(j in 1:length(cond)) {
+        k <- which(y[, 2] == cond[j] & y[, 3] == var[i])
+        a <- y[k, ]
+        r <- floor(runif(length(k)))*length(k)+1
+        yb[k, ] <- a[r, ]
+      }
+    }
+  }
+
+  ## TODO
+  return()
+}
+
+## TODO: fix up
+resample <- function(x, y, type) {
+  yr <- y
+
+  for (ivar in 1:length(x)) {
+    if (type == 0) {
+      sigma <- y[ivar]$cov/y[ivar]$n
+    }
+    else {
+      sigma <- matrix(0, nrow(y[ivar]$cov), ncol(y[ivar]$cov))
+      k <- which(y[ivar]$n > 0)
+      sigma[k] <- y[ivar]$cov[k]/y[ivar]$n[k]
+    }
+    yv[ivar]$means <- t(mvrnorm(x[ivar], sigma))
+  }
+
+  return(yr)
 }
 
 staCMR <- function(data, E = list()) {
