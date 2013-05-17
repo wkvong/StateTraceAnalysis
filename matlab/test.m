@@ -19,4 +19,4 @@
 
 load '../data/nakabayashi.mat'
 
-CMRfits(1, data)
+CMRfits(2, data)

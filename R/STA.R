@@ -7,6 +7,7 @@ library(R.matlab)
 library(MASS)
 library(foreach)
 library(doParallel)
+library(randtoolbox)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 
@@ -54,12 +55,12 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   datafit <- c(f, sum(f))
 
   ## TODO: make seed same as matlab to compare random samples?
-  set.seed(as.numeric(Sys.time()))
+  set.generator("MersenneTwister", initialization="init2002", resolution=32, seed=12345)
   fits <- matrix(0, nsample, nvar)
   
   ## initiate parallel code, TODO: use snow for windows systems, let user specify no of cpu cores etc.
-  cl <- makeCluster(4)
-  registerDoParallel(cl)
+  ## cl <- makeCluster(4)
+  ## registerDoParallel(cl)
 
   ## TODO: make parallel again
   for (i in 1:nsample) {
@@ -89,7 +90,7 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
     yr <- resample(x, y, type)
 
     y <- yr
-
+    
     if (length(E1) == 0) {
       if (length(E) != 0) {
         staMR.output <- staMR(y, E)
@@ -108,15 +109,16 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       x1 <- staCMR.output$x
       f1 <- staCMR.output$f
     }
+
+    print(f1)
+    print(f2)
     
     f <- f1 - f2
     fits[i, ] <-  f ## store Monte Carlo fits ## TODO: check type of fits to match
-
-    print(fits)
   }
 
   ## stop cluster
-  stopCluster(cl)
+  ## stopCluster(cl)
 
   ## TODO: fix up 
   ## fits <- c(fits, sum(fits)) ## TODO: add sum of fits column?
@@ -433,6 +435,42 @@ staMR <- function(data, E = list()) {
   return(output)
 }
 
+outSTATS <- function(data) {
+  ## Calculates statistics for state trace analysis for data in a "general" format
+  ##
+  ## Args:
+  ##   data: A list of submatrices contain nsub x ncond matrices
+  ##
+  ## Returns a list with the following items:
+  ##   means: Observed means
+  ##   n: Number of subjects
+  ##   cov: Observed covariance matrix
+  ##   weights: Weight matrix for monotonic regression
+  ##   lm: TODO
+
+  cond <- data[, 2]
+  u.cond <- unique(cond)
+  var <- data[, 3]
+  u.var <- unique(var)
+  within <- data[, 4]; ## TODO: 4 to end
+
+  ys <- list()
+  
+  for (ivar in 1:length(u.var)) {
+    ys[[ivar]] <- list()
+    names(ys[[ivar]]) <- c("means", "cov", "covs", "n", "weights")
+
+    ## TODO: assign a/b/c to empty vectors
+    
+    for (icond in 1:length(ucond)) {
+      k <- which(var == uvar[ivar] & cond == ucond[icond])
+      ## TODO: finish off!
+    }
+    
+  }
+  
+}
+
 staSTATS <- function(data) {
   ## Calculates statistics for state trace analysis
   ##
@@ -634,17 +672,3 @@ Cell2Adj <- function(nodes, E=list()) {
   }
   return(adj)
 }
-
-## TODO: move to another file or to tests/ folder
-## testing code
-
-## A <- matrix(c(1, 0, 1, 0, 1, 0, 0, 1, 0), nrow = 3, byrow = TRUE)
-## w <- diag(3)
-## L <- MR(y=c(2, 4, 8), w, E=A)
-
-## ## read in data and convert to a list
-## x <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE)
-
-## output <- staSTATS(x)
-## staMR(x)
-
