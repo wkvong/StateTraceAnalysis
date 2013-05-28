@@ -5,9 +5,9 @@ library(limSolve)
 library(expm)
 library(R.matlab)
 library(MASS)
-library(foreach)
-library(doParallel)
-library(randtoolbox)
+## library(foreach)
+## library(doParallel)
+## library(randtoolbox)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 
@@ -54,15 +54,14 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   f <- f1 - f2
   datafit <- c(f, sum(f))
 
-  ## TODO: make seed same as matlab to compare random samples?
-  set.generator("MersenneTwister", initialization="init2002", resolution=32, seed=12345)
+  ## set.generator("MersenneTwister", initialization="init2002", resolution=32, seed=12345)
   fits <- matrix(0, nsample, nvar)
   
   ## initiate parallel code, TODO: use snow for windows systems, let user specify no of cpu cores etc.
   ## cl <- makeCluster(4)
   ## registerDoParallel(cl)
 
-  ## TODO: make parallel again
+  ## TODO: make parallel again?
   for (i in 1:nsample) {
     ## bootstrap sample
     yb <- bootstrap(data, type)
@@ -85,12 +84,11 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       x <- staCMR.output$x
       f <- staCMR.output$f
     }
-    
+
     ## resample model
     yr <- resample(x, y, type)
-
     y <- yr
-    
+
     if (length(E1) == 0) {
       if (length(E) != 0) {
         staMR.output <- staMR(y, E)
@@ -100,6 +98,10 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       else {
         f2 <- 0
       }
+
+      staCMR.output <- staCMR(y, E)
+      x1 <- staCMR.output$x
+      f1 <- staCMR.output$f
     }
     else {
       staCMR.output <- staCMR(y, E)
@@ -110,25 +112,20 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       f1 <- staCMR.output$f
     }
 
-    print(f1)
-    print(f2)
-    
     f <- f1 - f2
-    fits[i, ] <-  f ## store Monte Carlo fits ## TODO: check type of fits to match
+    fits[i, ] <-  f ## store Monte Carlo fits
   }
 
   ## stop cluster
   ## stopCluster(cl)
 
-  ## TODO: fix up 
-  ## fits <- c(fits, sum(fits)) ## TODO: add sum of fits column?
-
+  fits <- cbind(fits, rowSums(fits))
+  
   p <- rep(0, length(datafit)) ## calculate p
 
-  for (i in 1:nrow(fits)) {
-    ## TODO: fix!
-    k <- which(fits[, i] >= datafit[i]) 
-    p[i] <- length(k)/nsample 
+  for (i in 1:ncol(fits)) {
+    k <- which(fits[, i] >= datafit[i])
+    p[i] <- length(k)/nsample
   }
 
   output <- list(p, datafit, fits)
@@ -187,7 +184,6 @@ bootstrap <- function(y, type) {
   return(yb)
 }
 
-## TODO: fix up
 resample <- function(x, y, type) {
   yr <- y
 
@@ -202,8 +198,7 @@ resample <- function(x, y, type) {
       sigma[k] <- y[[ivar]]$cov[k]/y[[ivar]]$n[k]
     }
 
-    ## TODO: fix!!
-    yr[[ivar]]$means <- t(mvrnorm(mu=x[[ivar]], Sigma=sigma))
+    yr[[ivar]]$means <- mvrnorm(mu=x[[ivar]], Sigma=sigma)
   }
 
   return(yr)

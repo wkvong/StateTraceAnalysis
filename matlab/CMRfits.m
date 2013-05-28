@@ -50,7 +50,7 @@ datafit = [f sum(f)];
 
 %rng ('shuffle');
 %rand('seed',sum(100*clock));
-rand('twister', 12345)
+rand('twister', 10)
 fits = zeros(nsample,nvar);
 parfor isample=1:nsample
     % bootstrap sample
@@ -62,11 +62,13 @@ parfor isample=1:nsample
     else
         y = outSTATS(yb);
     end
+    
     if isempty(E1)
         [x f] = staCMR (y, E);
     else
         [x f] = staCMR (y, E1);
     end
+    
     % resample model
     yr = resample (x, y, type);
     % fit 1D and 2D models
@@ -84,15 +86,12 @@ parfor isample=1:nsample
         [x2 f2] = staCMR (y, E);
         [x1 f1] = staCMR (y, E1);
     end
-    
-    f1
-    f2
-    
+             
     f = f1 - f2; 
     fits(isample,:) = f; % store Monte Carlo fits
-    fits
 end
 fits = [fits sum(fits,2)];  % add sum column
+
 % calculate p
 p = zeros(size(datafit));
 for i=1:size(fits,2)
@@ -134,6 +133,7 @@ end
 
 function yr = resample(x, y, type)
 yr = y;
+
 for ivar = 1:numel(x)
     if type==0
         sigma = y{ivar}.cov./y{ivar}.n;
