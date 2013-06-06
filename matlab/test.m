@@ -19,4 +19,7 @@
 
 load '../data/nakabayashi.mat'
 
-[p datafit fits] = CMRfits(100, data)
+tic
+[p datafit fits] = CMRfits(100, data);
+toc
+p

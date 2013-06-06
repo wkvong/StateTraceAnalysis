@@ -5,9 +5,7 @@ library(limSolve)
 library(expm)
 library(R.matlab)
 library(MASS)
-## library(foreach)
-## library(doParallel)
-## library(randtoolbox)
+## library(matlab) ## TODO: which function am i using here? how to compensate?
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 
@@ -192,7 +190,6 @@ resample <- function(x, y, type) {
       sigma <- y[[ivar]]$cov/y[[ivar]]$n
     }
     else {
-      ## TODO: check this works!
       sigma <- matrix(0, nrow(y[[ivar]]$cov), ncol(y[[ivar]]$cov))
       k <- which(y[[ivar]]$n > 0)
       sigma[k] <- y[[ivar]]$cov[k]/y[[ivar]]$n[k]
@@ -431,17 +428,17 @@ staMR <- function(data, E = list()) {
 }
 
 outSTATS <- function(data) {
-  ## Calculates statistics for state trace analysis for data in a "general" format
-  ##
-  ## Args:
-  ##   data: A list of submatrices contain nsub x ncond matrices
-  ##
-  ## Returns a list with the following items:
-  ##   means: Observed means
-  ##   n: Number of subjects
-  ##   cov: Observed covariance matrix
-  ##   weights: Weight matrix for monotonic regression
-  ##   lm: TODO
+  Calculates statistics for state trace analysis for data in a "general" format
+  
+  Args:
+    data: A list of submatrices contain nsub x ncond matrices
+  
+  Returns a list with the following items:
+    means: Observed means
+    n: Number of subjects
+    cov: Observed covariance matrix
+    weights: Weight matrix for monotonic regression
+    lm: TODO
 
   cond <- data[, 2]
   u.cond <- unique(cond)
@@ -455,12 +452,21 @@ outSTATS <- function(data) {
     ys[[ivar]] <- list()
     names(ys[[ivar]]) <- c("means", "cov", "covs", "n", "weights")
 
-    ## TODO: assign a/b/c to empty vectors
+    a <- list()
+    b <- list()
+    c <- list()
     
     for (icond in 1:length(ucond)) {
       k <- which(var == uvar[ivar] & cond == ucond[icond])
-      ## TODO: finish off!
+      x <- within[k, ]
+      u <- staSTATS(x)
+      ys$means <- cbind(ys$means, u$means)
+      a[[icond]] <- u$cov
+      b[[icond]] <- u$covs
+      c[[icond]] <- repmat(u$n, nrow(u$n), ncol(u$n))
     }
+
+    s <- "ys[[ivar]]$cov <- "
     
   }
   
