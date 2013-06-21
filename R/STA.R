@@ -428,17 +428,17 @@ staMR <- function(data, E = list()) {
 }
 
 outSTATS <- function(data) {
-  Calculates statistics for state trace analysis for data in a "general" format
+  ## Calculates statistics for state trace analysis for data in a "general" format
   
-  Args:
-    data: A list of submatrices contain nsub x ncond matrices
+  ## Args:
+  ##   data: A list of submatrices contain nsub x ncond matrices
   
-  Returns a list with the following items:
-    means: Observed means
-    n: Number of subjects
-    cov: Observed covariance matrix
-    weights: Weight matrix for monotonic regression
-    lm: TODO
+  ## Returns a list with the following items:
+  ##   means: Observed means
+  ##   n: Number of subjects
+  ##   cov: Observed covariance matrix
+  ##   weights: Weight matrix for monotonic regression
+  ##   lm: TODO
 
   cond <- data[, 2]
   u.cond <- unique(cond)
@@ -514,7 +514,11 @@ staSTATS <- function(data) {
 
     ## Tranpose weight matrix
     out[[4]] <- t(out[[4]])
-    out[[5]] <- diag(diag(out[[3]]))
+
+    out[[5]] <- LoftusMasson(y.i)
+    
+    ## TODO: change!!
+    ## out[[5]] <- diag(diag(out[[3]]))
 
     ## Add variable names to list
     names(out) <- out.names
@@ -528,6 +532,11 @@ staSTATS <- function(data) {
   }
 
   return(output)
+}
+
+LoftusMasson <- function(y.i) {
+  ## y.cond <-
+  return(0)
 }
 
 MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
