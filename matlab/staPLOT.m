@@ -1,41 +1,58 @@
-function staPLOT (data, model, groups, labels)
-% plot data
+function staPLOT (data, model, groups, labels, axislabels, axislimits)
+% generates a state-trace plot
+
 
 if ~iscell(data)
+    %{
     if sum(sum(isnan(data)))>0 % if data contain NaNs then it's in Henson format
         data = hen2gen (data); % convert Henson format to "general" format
         ys = outSTATS(data);
     end
+    %}
+    ys = outSTATS (data); % assumes general format
 elseif isstruct(data{1})
-    ys = data;
+    ys = data; % if structured then already in stats form
 else
-    ys = staSTATS(data);
+    ys = staSTATS(data); % otherwise assume within-subjects data and get stats
 end
 
 x = ys{1}.means; 
 y = ys{2}.means; 
+
 if ismatrix(ys{1}.n)
-    cx = sqrt(diag(ys{1}.lm)./diag(ys{1}.n));
-    cy = sqrt(diag(ys{2}.lm)./diag(ys{2}.n));
+%    cx = sqrt(diag(ys{1}.lm)./diag(ys{1}.n));
+%    cy = sqrt(diag(ys{2}.lm)./diag(ys{2}.n));
+    cx = sqrt(diag(ys{1}.cov)./diag(ys{1}.n)); % between-subjects error bars
+    cy = sqrt(diag(ys{2}.cov)./diag(ys{2}.n));
 elseif isvector(ys{1}.n)
-    cx = sqrt(diag(ys{1}.lm)./ys{1}.n);
+    cx = sqrt(diag(ys{1}.lm)./ys{1}.n); % within-subjects error bars
     cy = sqrt(diag(ys{2}.lm)./ys{2}.n);
 else
     cx = sqrt(diag(ys{1}.lm)/ys{1}.n);
     cy = sqrt(diag(ys{2}.lm)/ys{2}.n);
 end
-if nargin < 3
+if nargin < 3 || isempty(groups)
     groups = {1:numel(ys{1}.means)};
 end
 if nargin < 2
     model = [];
 end
-if nargin < 4
+if nargin < 4 || isempty(labels)
     labels=cell(1,numel(groups));
     for i=1:numel(labels)
         labels{i} = ['Condition ' num2str(i)];
     end
 end
+if nargin < 5 || isempty(axislabels)
+    axislabels = cell(1,2);
+    for i=1:numel(axislabels)
+        axislabels{i} = ['Outcome Variable ' num2str(i)];
+    end
+end
+if nargin < 6
+    axislimits = {};
+end
+   
 % plot data
 plotdata (x, y, groups, 0);
 
@@ -54,9 +71,18 @@ end
 plotdata (x, y, groups, 1);
 hold off
 
-xlim('auto'); ylim('auto');
-% xlabel ('"Sure Old" - HR'); ylabel ('"Probably Old" - HR');
-xlabel ('Outcome Variable 1'); ylabel ('Outcome Variable 2');
+% set axis limits
+if ~isempty(axislimits)
+    xlim(axislimits{1}); ylim(axislimits{2});
+else
+    xlim('auto'); ylim('auto');
+end
+
+% output axis labels
+a = 'xlabel('; a = [a '''' axislabels{1} '''' ');']; eval(a);
+a = 'ylabel('; a = [a '''' axislabels{2} '''' ');']; eval(a);
+
+% output legend
 a = 'legend(';
 for i=1:numel(labels)
     a=[a '''' labels{i} '''' ','];
@@ -134,6 +160,7 @@ end
 function DeleteLegendEntry (h)
 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
 
+%{
 function newdata = hen2gen (subjectdata, subno)
 % converts Henson data to general format
 % subno is optional subject number to be inserted
@@ -151,8 +178,9 @@ for ivar = 1:2
         newdata = [newdata; a];
     end
 end
+%}
 
-function ix = tiesort (xx, yy);
+function ix = tiesort (xx, yy)
 % sorts y values in increasing x-order
 % within blocks of tied x-values, sorts y values in increasing y-order
 bignumber=100;
