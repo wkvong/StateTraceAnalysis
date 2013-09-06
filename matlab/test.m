@@ -1,14 +1,12 @@
-% A = [1 0 1; 0 1 0; 0 1 0];
+A = [1 1 0; 0 0 0; 0 1 1];
 
-% nodes = [1 2 3];
+nodes = [1 2 3];
 
-% [x, fit, exitflag, output] = MR1([2 4 8], eye(3), A);
+[x, fit, exitflag, output] = MR1([2 4 8], eye(3), A);
 
-% x = dlmread('x.dat', '\t');
-% x = num2cell(x, 1)
+% x = dlmread('../data/x.dat', '\t');
 
 % output = staSTATS(x);
-
 % [x fit exitflag] = staMR(x);
 
 % output = {output};
@@ -17,9 +15,7 @@
 
 % [x f] = staCMR(data{1})
 
-load '../data/nakabayashi.mat'
+% load '../data/nakabayashi.mat'
 
-tic
-[p datafit fits] = CMRfits(100, data);
-toc
-p
+
+% [p datafit fits] = CMRfits(100, data);

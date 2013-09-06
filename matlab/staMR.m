@@ -28,4 +28,3 @@ f(find(f<tol))=0;
 if ~iscell(data)
     x = x{1};
 end
-

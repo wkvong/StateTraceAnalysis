@@ -535,7 +535,7 @@ staSTATS <- function(data) {
 }
 
 LoftusMasson <- function(y.i) {
-  ## y.cond <-
+  ## TODO: Talk to John about this code!
   return(0)
 }
 
@@ -600,7 +600,6 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   
   return(L)
 }
-
 
 Adj2Cell <- function(adj) {
   ## Converts adjacency matrix to list
