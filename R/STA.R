@@ -236,7 +236,7 @@ staCMR <- function(data, E = list()) {
     f <- f[1]
   }
 
-  output <- list(x=x, f=ff, e.prime=e.prime)
+  output <- list(x=x, f=f, e.prime=e.prime)
   return(output)
 }
 
