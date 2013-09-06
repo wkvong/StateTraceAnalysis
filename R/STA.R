@@ -1,4 +1,3 @@
-## TODO: Move tests to another file?
 ## TODO: fix output/names(output) to a single line?
 
 library(limSolve)
@@ -126,9 +125,7 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
     p[i] <- length(k)/nsample
   }
 
-  output <- list(p, datafit, fits)
-  names(output) <- c("p", "datafit", "fits")
-  
+  output <- list(p=p, datafit=datafit, fits=fits)
   return(output)
 }
 
@@ -239,9 +236,7 @@ staCMR <- function(data, E = list()) {
     f <- f[1]
   }
 
-  output <- list(x, f, e.prime)
-  names(output) <- c("x", "f", "e.prime")
-  
+  output <- list(x=x, f=ff, e.prime=e.prime)
   return(output)
 }
 
@@ -323,9 +318,7 @@ CMR <- function(y, E = list()) {
   x.star <- x.bar
   e.star <- e.bar
 
-  output <- list(x.star, f.fits, e.star, exitflag)
-  names(output) <- c("x.star", "f.fits", "e.star", "exitflag")
-  
+  output <- list(x.star=x.star, f.fits=f.fits, e.star=e.star, exitflag=exitflag)
   return(output)
 }
 
@@ -368,9 +361,7 @@ Feasible <- function(x.prime) {
     idx <- u[k[1], ]
   }
 
-  output <- list(flag, idx)
-  names(output) <- c("flag", "idx")
-  
+  output <- list(flag=flag, idx=idx)
   return(output)
 }
 
@@ -421,9 +412,7 @@ staMR <- function(data, E = list()) {
     x <- x[[1]] ## TODO: check what this does?
   }
 
-  output <- list(x, f, exitflag)
-  names(output) <- c("x", "f", "exitflag")
-  
+  output <- list(x=x, f=f, exitflag=exitflag)
   return(output)
 }
 
@@ -593,7 +582,7 @@ MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
   ## Run weighted least squares regression with inequality constraints
   L <- lsei(A = C, B = d, G = A, H = b, type=2, verbose = TRUE) 
   names(L) <- c("x", "resid", "fit", "exitflag", "output")
-  
+
   return(L)
 }
 
