@@ -527,7 +527,7 @@ staSTATS <- function(data) {
     output[[i]] <- out
   }
 
-  if (!is.list(output)) {
+  if (length(output) == 1) {
     output <- output[[1]]
   }
 
