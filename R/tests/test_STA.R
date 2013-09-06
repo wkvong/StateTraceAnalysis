@@ -27,8 +27,7 @@ test_that("Test for converting cell array to adjacency matrix", {
 
 context("Monotonic Regression tests")
 
-test_that("Test for monotonic regression function", {
-  ## TODO: add more tests?
+test_that("Test for monotonic regression function with made up data", {
   A <- matrix(c(1, 0, 0, 1, 0, 1, 0, 0, 1), nrow=3)
   y <- c(2, 4, 8)
 
@@ -40,3 +39,29 @@ test_that("Test for monotonic regression function", {
   expect_that(x, equals(output$x))
   expect_that(fit, equals(output$fit))
 })
+
+## TODO: add more tests for MR with John's datasets?
+
+context("State Trace Analysis Statistics tests")
+
+test_that("Test for state trace analysis statistics with x.dat", {
+  x <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
+
+  output <- staSTATS(x)
+
+  means <- c(-0.06410421, 0.54172488, 1.25611257, 1.58557776, 2.13484796)
+  n <- 20
+  cov <- matrix(c(0.85214702, -0.08505141,  0.02161435,  0.06943527,  0.02321054,
+                  -0.08505141,  1.02471854,  0.16462394, -0.02683712, -0.38845463,
+                  0.02161435,  0.16462394,  1.27805730,  0.11634497, -0.08167361,
+                  0.06943527, -0.02683712,  0.11634497,  1.72060522,  0.61117765,
+                  0.02321054, -0.38845463, -0.08167361,  0.61117765,  2.93684274), nrow=5, byrow=TRUE)
+  
+  weights <- matrix(c(23.47013, 19.51755, 15.64875, 11.62382, 6.810034), nrow=1)
+  
+  expect_that(means, equals(output$means))
+  expect_that(n, equals(output$n))
+  expect_that(cov, equals(output$cov))
+  expect_equal(weights, output$weights, tolerance=0.0001)
+})
+
