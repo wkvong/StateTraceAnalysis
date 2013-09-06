@@ -42,13 +42,14 @@ test_that("Test for monotonic regression function with made up data", {
 
 ## TODO: add more tests for MR with John's datasets?
 
-context("State Trace Analysis Statistics tests")
+context("State trace analysis statistics tests")
 
 test_that("Test for state trace analysis statistics with x.dat", {
-  x <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
+  x.dat <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
 
-  output <- staSTATS(x)
-
+  output <- staSTATS(x.dat)
+  output <- output[[1]]
+  
   means <- c(-0.06410421, 0.54172488, 1.25611257, 1.58557776, 2.13484796)
   n <- 20
   cov <- matrix(c(0.85214702, -0.08505141,  0.02161435,  0.06943527,  0.02321054,
