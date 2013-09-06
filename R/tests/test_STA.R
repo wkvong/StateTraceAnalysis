@@ -65,3 +65,16 @@ test_that("Test for state trace analysis statistics with x.dat", {
   expect_equal(weights, output$weights, tolerance=0.0001)
 })
 
+context("State trace analysis monotonic regression tests")
+
+test_that("Test for state trace analysis monotonic regression", {
+  x.dat <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
+
+  output <- staMR(x.dat)
+
+  x <- c(-0.06410421, 0.54172488, 1.25611257, 1.58557776, 2.13484796)
+  f <- 0
+
+  expect_that(x, equals(output$x))
+  expect_that(f, equals(output$f))
+})
