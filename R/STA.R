@@ -4,7 +4,6 @@ library(limSolve)
 library(expm)
 library(R.matlab)
 library(MASS)
-## library(matlab) ## TODO: which function am i using here? how to compensate?
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
 
@@ -54,11 +53,10 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## set.generator("MersenneTwister", initialization="init2002", resolution=32, seed=12345)
   fits <- matrix(0, nsample, nvar)
   
-  ## initiate parallel code, TODO: use snow for windows systems, let user specify no of cpu cores etc.
+  ## initiate parallel code
   ## cl <- makeCluster(4)
   ## registerDoParallel(cl)
 
-  ## TODO: make parallel again?
   for (i in 1:nsample) {
     ## bootstrap sample
     yb <- bootstrap(data, type)
@@ -158,10 +156,9 @@ bootstrap <- function(y, type) {
   }
   else {
     ## y is in the general format
-    ## TODO: check this works
     
-    cond <- unique(y[, 2]) ## TODO: fix up
-    var <- unique(y[, 3])
+    cond <- sort(unique(y[, 2]))
+    var <- sort(unique(y[, 3]))
 
     yb <- y
 
@@ -430,10 +427,10 @@ outSTATS <- function(data) {
   ##   lm: TODO
 
   cond <- data[, 2]
-  u.cond <- unique(cond)
+  u.cond <- sort(unique(cond))
   var <- data[, 3]
-  u.var <- unique(var)
-  within <- data[, 4]; ## TODO: 4 to end
+  u.var <- sort(unique(var))
+  within <- data[, 4:ncol(data)];
 
   ys <- list()
   
