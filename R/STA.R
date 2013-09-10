@@ -57,7 +57,6 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   for (i in 1:nsample) {
     ## bootstrap sample
     yb <- bootstrap(data, type)
-
     ## fit 1D model to bootstrap data
     if (type == 0) {
       y <- staSTATS(yb)
@@ -76,7 +75,6 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       x <- staCMR.output$x
       f <- staCMR.output$f
     }
-
     ## resample model
     yr <- resample(x, y, type)
     y <- yr
@@ -103,7 +101,6 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       x1 <- staCMR.output$x
       f1 <- staCMR.output$f
     }
-
     f <- f1 - f2
     fits[i, ] <-  f ## store Monte Carlo fits
   }
@@ -128,7 +125,7 @@ bootstrap <- function(y, type) {
   ## Draws bootstrap from data
 
   yb <- list()
-  
+
   if (type == 0) {
     ## y in specific nsub x ncond format
 
@@ -159,12 +156,11 @@ bootstrap <- function(y, type) {
 
     yb <- y
 
-    ## TODO: fix up
-    for(i in 1:length(var)) {
-      for(j in 1:length(cond)) {
-        k <- which(y[, 2] == cond[j] & y[, 3] == var[i])
+    for(j in 1:length(var)) {
+      for(i in 1:length(cond)) {
+        k <- which(y[, 2] == cond[i] & y[, 3] == var[j])
         a <- y[k, ]
-        r <- floor(runif(length(k)))*length(k)+1
+        r <- floor(runif(length(k))*length(k))+1
         yb[k, ] <- a[r, ]
       }
     }
@@ -421,7 +417,7 @@ outSTATS <- function(data) {
   ##   n: Number of subjects
   ##   cov: Observed covariance matrix
   ##   weights: Weight matrix for monotonic regression
-  ##   lm: TODO
+  ##   lm: Loftus Masson statistics
 
   cond <- data[, 2]
   u.cond <- sort(unique(cond))
