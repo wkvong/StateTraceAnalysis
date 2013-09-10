@@ -19,18 +19,18 @@ end
 x = ys{1}.means; 
 y = ys{2}.means; 
 
-if ismatrix(ys{1}.n)
+% if ismatrix(ys{1}.n)
 %    cx = sqrt(diag(ys{1}.lm)./diag(ys{1}.n));
 %    cy = sqrt(diag(ys{2}.lm)./diag(ys{2}.n));
     cx = sqrt(diag(ys{1}.cov)./diag(ys{1}.n)); % between-subjects error bars
     cy = sqrt(diag(ys{2}.cov)./diag(ys{2}.n));
-elseif isvector(ys{1}.n)
-    cx = sqrt(diag(ys{1}.lm)./ys{1}.n); % within-subjects error bars
-    cy = sqrt(diag(ys{2}.lm)./ys{2}.n);
-else
-    cx = sqrt(diag(ys{1}.lm)/ys{1}.n);
-    cy = sqrt(diag(ys{2}.lm)/ys{2}.n);
-end
+% elseif isvector(ys{1}.n)
+%     cx = sqrt(diag(ys{1}.lm)./ys{1}.n); % within-subjects error bars
+%     cy = sqrt(diag(ys{2}.lm)./ys{2}.n);
+% else
+%     cx = sqrt(diag(ys{1}.lm)/ys{1}.n);
+%     cy = sqrt(diag(ys{2}.lm)/ys{2}.n);
+% end
 if nargin < 3 || isempty(groups)
     groups = {1:numel(ys{1}.means)};
 end

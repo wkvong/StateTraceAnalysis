@@ -4,7 +4,13 @@ library(R.matlab)
 library(MASS)
 library(pracma)
 
+staPLOT <- function(data, model, groups, labels, axislabels, axislimits) {
+  
+}
+
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
+  ## TODO: function documentation
+  
   if (!is.list(data)) {
     type <- 1
     nvar <- length(unique(data[, 3]))
