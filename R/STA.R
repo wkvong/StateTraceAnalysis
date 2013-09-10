@@ -1,5 +1,3 @@
-## TODO: fix output/names(output) to a single line?
-
 library(limSolve)
 library(expm)
 library(R.matlab)
@@ -7,15 +5,14 @@ library(MASS)
 library(pracma)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
-  ## TODO: ask John about this data format later?
-  ## if (is.list(data)) {
-  ##   type <- 1
-  ##   nvar <- length(unique(data[, 3])) ## TODO: check this is right with real data
-  ## }
-  ## else {
-  type <- 0
-  nvar <- length(data)
-  ## }
+  if (!is.list(data)) {
+    type <- 1
+    nvar <- length(unique(data[, 3]))
+  }
+  else {
+    type <- 0
+    nvar <- length(data)
+  }
 
   if (type == 0) {
     ys <- staSTATS(data)
