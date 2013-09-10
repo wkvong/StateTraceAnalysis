@@ -4,6 +4,7 @@ library(limSolve)
 library(expm)
 library(R.matlab)
 library(MASS)
+library(pracma)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: ask John about this data format later?
@@ -435,7 +436,7 @@ outSTATS <- function(data) {
   
   for (i.var in 1:length(u.var)) {
     ys[[i.var]] <- list(c(), c(), c(), c(), c())
-    names(ys[[i.var]]) <- c("means", "cov", "covs", "n", "weights")
+    names(ys[[i.var]]) <- c("means", "cov", "lm", "n", "weights")
 
     a <- list()
     b <- list()
@@ -445,15 +446,60 @@ outSTATS <- function(data) {
       k <- which(var == u.var[i.var] & cond == u.cond[i.cond]);
       x <- within[k, ];
       u <- staSTATS(x);
-      ys$means <- cbind(ys$means, u$means)
+      u <- u[[1]] ## staSTATS hack, needs to return everything in the first list element
+      ys[[i.var]]$means <- c(ys[[i.var]]$means, u$means)
       a[[i.cond]] <- u$cov
-      b[[i.cond]] <- u$covs
-      c[[i.cond]] <- repmat(u$n, nrow(u$n), ncol(u$n))
+      b[[i.cond]] <- u$lm
+      c[[i.cond]] <- repmat(matrix(u$n), nrow(u$cov), ncol(u$cov))
     }
 
-    ## s <- "ys[[ivar]]$cov <- "
-    
+    s <- "ys[[i.var]]$cov <- blkdiag("
+
+    for (i in 1:length(u.cond)) {
+      s <- paste0(s, "a[[" , as.character(i), "]]")
+      if (i < length(u.cond)) {
+        s <- paste0(s, ", ")
+      }
+      else {
+        s <- paste0(s, ")")
+      }
+    }
+
+    eval(parse(text=s))
+
+    s <- "ys[[i.var]]$lm <- blkdiag("
+
+    for (i in 1:length(u.cond)) {
+      s <- paste0(s, "b[[" , as.character(i), "]]")
+      if (i < length(u.cond)) {
+        s <- paste0(s, ", ")
+      }
+      else {
+        s <- paste0(s, ")")
+      }
+    }
+
+    eval(parse(text=s))
+
+    s <- "ys[[i.var]]$n <- blkdiag("
+
+    for (i in 1:length(u.cond)) {
+      s <- paste0(s, "c[[" , as.character(i), "]]")
+      if (i < length(u.cond)) {
+        s <- paste0(s, ", ")
+      }
+      else {
+        s <- paste0(s, ")")
+      }
+    }
+
+    eval(parse(text=s))
+
+    a <- diag(ys[[i.var]]$n)/diag(ys[[i.var]]$cov)
+    ys[[i.var]]$weights <- t(a)
   }
+
+  return(ys)
 }
 
 staSTATS <- function(data) {
