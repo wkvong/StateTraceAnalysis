@@ -1,4 +1,4 @@
-function [p datafit fits] = CMRfits (nsample, data, E, E1)
+-function [p datafit fits] = CMRfits (nsample, data, E, E1)
 % if E1 is specified then compares non-overlap model with 1D model
 % else compares 1D model to 2D model
 % computes empirical p-value for hypothesis that means across NCOND
@@ -53,7 +53,7 @@ datafit = [f sum(f)];
 rand('twister', 10)
 fits = zeros(nsample,nvar);
 parfor isample=1:nsample
-    % bootstrap sample
+    % bootstrap sample2
     yb = bootstrap (data, type);
 
     % fit 1D model to bootstrap data

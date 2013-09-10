@@ -80,6 +80,8 @@ test_that("Test for state trace analysis monotonic regression", {
   expect_that(f, equals(output$f))
 })
 
+context("Compound monotonic regression tests")
+
 test_that("Test for compound monotonic regression", {
   nakabayashi <- readMat('../../data/nakabayashi.mat')
   nakabayashi <- nakabayashi$data
@@ -93,4 +95,17 @@ test_that("Test for compound monotonic regression", {
   expect_equal(nakabayashi.1, output$x[[1]], tolerance = 0.0001)
   expect_equal(nakabayashi.2, output$x[[2]], tolerance = 0.0001)
   expect_equal(f, output$f, tolerance = 0.0001)
+})
+
+test_that("Test for CMRfits", {
+  nakabayashi <- readMat('../../data/nakabayashi.mat')
+  nakabayashi <- nakabayashi$data
+  
+  nakabayashi.p <- c(1, 0.34, 0.54)
+  nakabayashi.datafit <- c(0, 0.3493, 0.3493)
+    
+  output <- CMRfits(100, nakabayashi)
+
+  expect_equal(nakabayashi.p, output$p, tolerance = 0.2)
+  expect_equal(nakabayashi.datafit, output$datafit, tolerance = 0.001)
 })
