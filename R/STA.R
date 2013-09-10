@@ -6,7 +6,6 @@ library(R.matlab)
 library(MASS)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
-
   ## TODO: ask John about this data format later?
   ## if (is.list(data)) {
   ##   type <- 1
@@ -434,28 +433,27 @@ outSTATS <- function(data) {
 
   ys <- list()
   
-  for (ivar in 1:length(u.var)) {
-    ys[[ivar]] <- list()
-    names(ys[[ivar]]) <- c("means", "cov", "covs", "n", "weights")
+  for (i.var in 1:length(u.var)) {
+    ys[[i.var]] <- list(c(), c(), c(), c(), c())
+    names(ys[[i.var]]) <- c("means", "cov", "covs", "n", "weights")
 
     a <- list()
     b <- list()
     c <- list()
     
-    for (icond in 1:length(ucond)) {
-      k <- which(var == uvar[ivar] & cond == ucond[icond])
-      x <- within[k, ]
-      u <- staSTATS(x)
+    for (i.cond in 1:length(u.cond)) {
+      k <- which(var == u.var[i.var] & cond == u.cond[i.cond]);
+      x <- within[k, ];
+      u <- staSTATS(x);
       ys$means <- cbind(ys$means, u$means)
-      a[[icond]] <- u$cov
-      b[[icond]] <- u$covs
-      c[[icond]] <- repmat(u$n, nrow(u$n), ncol(u$n))
+      a[[i.cond]] <- u$cov
+      b[[i.cond]] <- u$covs
+      c[[i.cond]] <- repmat(u$n, nrow(u$n), ncol(u$n))
     }
 
-    s <- "ys[[ivar]]$cov <- "
+    ## s <- "ys[[ivar]]$cov <- "
     
   }
-  
 }
 
 staSTATS <- function(data) {
@@ -501,11 +499,9 @@ staSTATS <- function(data) {
     ## Tranpose weight matrix
     out[[4]] <- t(out[[4]])
 
+    ## Calculate Loftus Masson data
     out[[5]] <- LoftusMasson(y.i)
     
-    ## TODO: change!!
-    ## out[[5]] <- diag(diag(out[[3]]))
-
     ## Add variable names to list
     names(out) <- out.names
 
@@ -517,8 +513,23 @@ staSTATS <- function(data) {
 }
 
 LoftusMasson <- function(y.i) {
-  ## TODO: Talk to John about this code!
-  return(0)
+  y.cond <- repmat(matrix(colMeans(y.i), ncol=ncol(y.i)), nrow(y.i), 1)
+  y.subj <- repmat(matrix(rowMeans(y.i), nrow=nrow(y.i)), 1, ncol(y.i))
+  y.mean <- repmat(matrix(mean(rowMeans(y.i)),nrow=1), nrow(y.i), ncol(y.i))
+  y.a <<- y.i - y.cond - y.subj + y.mean
+  ss <- sum(y.a*y.a)
+  df <- (nrow(y.i)-1)*(ncol(y.i)-1)
+  ms.resid <- ss/df
+  r <- diag(ms.resid, ncol(y.i))
+
+  return(r)
+}
+
+repmat <- function(X, m, n) {
+  ## R equivalent of repmat (matlab)
+  mx = dim(X)[1]
+  nx = dim(X)[2]
+  matrix(t(matrix(X, mx, nx*n)), mx*m, nx*n, byrow=TRUE)
 }
 
 MR <- function(y, w = diag(length(y)), E = matrix(0, length(y), length(y))) {
