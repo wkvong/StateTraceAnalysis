@@ -4,14 +4,16 @@ library(R.matlab)
 library(MASS)
 library(pracma)
 
-staPLOT <- function(data, model, groups = c(), labels, axislabels = c(), axislimits = c()) {
-  if(!is.list(data)) {
+staPLOT <- function(data = c(), model = c(), groups = c(), labels = c(), axislabels = c(), axislimits = c()) {
+  if(is.list(data)) {
     ys <- staSTATS(data)
   }
   else {
     ys <- outSTATS(data)
   }
 
+  print(ys)
+  
   x <- ys[[1]]$means
   y <- ys[[2]]$means
 
@@ -20,19 +22,36 @@ staPLOT <- function(data, model, groups = c(), labels, axislabels = c(), axislim
   cy <- sqrt(diag(ys[[2]]$cov)/diag(ys[[2]]$lm))
 
   if(isempty(groups)) {
-    
+    groups <- 1:length(ys[[1]]$means)
   }
+
+  if(isempty(labels)) {
+    labels <- c()
+    for(i in 1:length(groups)) {
+      labels[i] <- paste0("Condition ", i)
+    }
+  }
+
+  if(isempty(axislabels)) {
+    axislabels <- c()
+    for(i in 1:length(groups)) {
+      axislabels[i] <- paste0("Condition ", i)
+    }
+  }
+
+  ## TODO: finish off! need to add different group conditions, titles/axes/error bars/axis limits
+  plot(x,y)
 }
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: function documentation
   
-  if (!is.list(data)) {
-    type <- 1
+  if (is.list(data)) {
+    type <- 0
     nvar <- length(unique(data[, 3]))
   }
   else {
-    type <- 0
+    type <- 1
     nvar <- length(data)
   }
 
