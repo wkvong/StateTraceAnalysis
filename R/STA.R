@@ -4,8 +4,24 @@ library(R.matlab)
 library(MASS)
 library(pracma)
 
-staPLOT <- function(data, model, groups, labels, axislabels, axislimits) {
-  
+staPLOT <- function(data, model, groups = c(), labels, axislabels = c(), axislimits = c()) {
+  if(!is.list(data)) {
+    ys <- staSTATS(data)
+  }
+  else {
+    ys <- outSTATS(data)
+  }
+
+  x <- ys[[1]]$means
+  y <- ys[[2]]$means
+
+  ## TODO: Get different error bars depending on structure of ys
+  cx <- sqrt(diag(ys[[1]]$cov)/diag(ys[[1]]$lm))
+  cy <- sqrt(diag(ys[[2]]$cov)/diag(ys[[2]]$lm))
+
+  if(isempty(groups)) {
+    
+  }
 }
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
@@ -27,8 +43,8 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
     ys <- outSTATS(data)
   }
 
-  if (length(E1) == 0) {
-    if (length(E) != 0) {
+  if (isempty(E1) ) {
+    if (!isempty(E)) {
       staMR.output <- staMR(ys, E)
       x2 <- staMR.output$x
       f2 <- staMR.output$f
@@ -71,7 +87,7 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
       y <- outSTATS(yb)
     }
 
-    if (length(E1) == 0) {
+    if (isempty(E1)) {
       staCMR.output <- staCMR(y, E)
       x <- staCMR.output$x
       f <- staCMR.output$f
@@ -85,8 +101,8 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
     yr <- resample(x, y, type)
     y <- yr
 
-    if (length(E1) == 0) {
-      if (length(E) != 0) {
+    if (isempty(E1)) {
+      if (!isempty(E)) {
         staMR.output <- staMR(y, E)
         x2 <- staMR.output$x
         f2 <- staMR.output$f
