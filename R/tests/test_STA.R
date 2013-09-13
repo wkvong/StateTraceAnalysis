@@ -110,7 +110,7 @@ test_that("Test for CMRfits", {
   expect_equal(nakabayashi.datafit, output$datafit, tolerance = 0.001)
 })
 
-test_that("Test for outSTATS", {
-  delay <- matrix(scan('../../data/delay.dat'), ncol = 7, byrow = TRUE)
-  
-})
+## TODO: Add outSTATS test with delay.dat
+## test_that("Test for outSTATS", {
+##   delay <- matrix(scan('../../data/delay.dat'), ncol = 7, byrow = TRUE)  
+## })
