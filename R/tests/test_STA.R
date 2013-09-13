@@ -1,6 +1,5 @@
-library(testthat)
-
 source('../STA.R')
+library(testthat)
 
 context("Conversion function tests")
 
