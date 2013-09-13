@@ -45,10 +45,16 @@ staPLOT <- function(data = c(), model = c(), groups = c(), labels = c(), axislab
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: function documentation
-  
+
+  ## TODO: ask John about determining correct structure type here
   if (is.list(data)) {
     type <- 0
-    nvar <- length(unique(data[, 3]))
+    if(length(data) > 2) {
+      nvar <- length(unique(data[, 3]))
+    }
+    else {
+      nvar <- length(data)
+    }
   }
   else {
     type <- 1
