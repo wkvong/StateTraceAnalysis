@@ -1,4 +1,4 @@
-source('../STA.R')
+source('../R/STA.R')
 library(testthat)
 
 context("Conversion function tests")
@@ -44,7 +44,7 @@ test_that("Test for monotonic regression function with made up data", {
 context("State trace analysis statistics tests")
 
 test_that("Test for state trace analysis statistics with x.dat", {
-  x.dat <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
+  x.dat <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE);
 
   output <- staSTATS(x.dat)
   output <- output[[1]]
@@ -68,7 +68,7 @@ test_that("Test for state trace analysis statistics with x.dat", {
 context("State trace analysis monotonic regression tests")
 
 test_that("Test for state trace analysis monotonic regression", {
-  x.dat <- matrix(scan('../../data/x.dat'), ncol = 5, byrow = TRUE);
+  x.dat <- matrix(scan('../data/x.dat'), ncol = 5, byrow = TRUE);
 
   output <- staMR(x.dat)
 
@@ -82,7 +82,7 @@ test_that("Test for state trace analysis monotonic regression", {
 context("Compound monotonic regression tests")
 
 test_that("Test for compound monotonic regression", {
-  nakabayashi <- readMat('../../data/nakabayashi.mat')
+  nakabayashi <- readMat('../data/nakabayashi.mat')
   nakabayashi <- nakabayashi$data
 
   output <- staCMR(nakabayashi)
@@ -97,7 +97,7 @@ test_that("Test for compound monotonic regression", {
 })
 
 test_that("Test for CMRfits", {
-  nakabayashi <- readMat('../../data/nakabayashi.mat')
+  nakabayashi <- readMat('../data/nakabayashi.mat')
   nakabayashi <- nakabayashi$data
   
   nakabayashi.p <- c(1, 0.34, 0.54)
@@ -111,5 +111,5 @@ test_that("Test for CMRfits", {
 
 ## TODO: Add outSTATS test with delay.dat
 ## test_that("Test for outSTATS", {
-##   delay <- matrix(scan('../../data/delay.dat'), ncol = 7, byrow = TRUE)  
+##   delay <- matrix(scan('../data/delay.dat'), ncol = 7, byrow = TRUE)  
 ## })
