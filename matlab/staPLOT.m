@@ -1,14 +1,22 @@
 function staPLOT (data, model, groups, labels, axislabels, axislimits)
 % generates a state-trace plot
-
+% model = output from staCMR
+% groups = cell array of main division into levels of one IV
+% labels = cell array corresponding labels for levels of IV
+% axislabels = cell array of axis lables
+% axislimits = cell array of xlim and ylim values
+% for example, suppose we have one IV with two levels (labelled 'High' and 'Low') and another
+% IV with three levels (which we could label '1','2','3', but this will not feature on the plot.
+% There are thus 6 conditions organised so that the first 3 are 'High' and the next 3 are 'Low'.
+% Suppose too that we have previously run staCMR with the call, [x f] = staCMR (data, E), where 
+% E is an optional partial order.
+% Finally, suppose the 2 DVs can be labelled, 'Mean RT' for DV 1 and 'Mean Error' for DV 2 and that
+% plausible ranges for DVs 1 and 2 are 300-1000 and 0.5-1.0, respectively.
+% Then the appropriate call to staPLOT is:
+% staPLOT (data, x, {[1 2 3] [4 5 6]}, {'High' 'Low'}, {'Mean RT' 'Mean Error'}, {[300 1000] [.5 1]};
+%
 
 if ~iscell(data)
-    %{
-    if sum(sum(isnan(data)))>0 % if data contain NaNs then it's in Henson format
-        data = hen2gen (data); % convert Henson format to "general" format
-        ys = outSTATS(data);
-    end
-    %}
     ys = outSTATS (data); % assumes general format
 elseif isstruct(data{1})
     ys = data; % if structured then already in stats form
@@ -19,18 +27,13 @@ end
 x = ys{1}.means; 
 y = ys{2}.means; 
 
-% if ismatrix(ys{1}.n)
-%    cx = sqrt(diag(ys{1}.lm)./diag(ys{1}.n));
-%    cy = sqrt(diag(ys{2}.lm)./diag(ys{2}.n));
+if numel(ys{1}.n) > 1
     cx = sqrt(diag(ys{1}.cov)./diag(ys{1}.n)); % between-subjects error bars
     cy = sqrt(diag(ys{2}.cov)./diag(ys{2}.n));
-% elseif isvector(ys{1}.n)
-%     cx = sqrt(diag(ys{1}.lm)./ys{1}.n); % within-subjects error bars
-%     cy = sqrt(diag(ys{2}.lm)./ys{2}.n);
-% else
-%     cx = sqrt(diag(ys{1}.lm)/ys{1}.n);
-%     cy = sqrt(diag(ys{2}.lm)/ys{2}.n);
-% end
+else
+    cx = sqrt(diag(ys{1}.lm)/ys{1}.n); % within-subjects error bars
+    cy = sqrt(diag(ys{2}.lm)/ys{2}.n);
+end
 if nargin < 3 || isempty(groups)
     groups = {1:numel(ys{1}.means)};
 end
@@ -87,8 +90,7 @@ a = 'legend(';
 for i=1:numel(labels)
     a=[a '''' labels{i} '''' ','];
 end
-a=[a '''location'', ''southeast'');'];
-eval(a);
+a=[a '''location'', ''southeast'');']; eval(a);
 
 function plotdata(x,y,groups,flag)
 msize=10;
@@ -190,4 +192,3 @@ t=1:numel(x);
 z=[x y t'];
 a=sortrows(z,[1 2]);
 ix=a(:,3);
-

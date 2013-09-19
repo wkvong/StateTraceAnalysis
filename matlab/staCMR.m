@@ -11,17 +11,14 @@ end
 if isempty(E)
     E = {};
 end
-y = data;
-if ~iscell(y)
-    y = {y};
-end
-if ~isstruct(y{1})
-    y = staSTATS(y);
+
+if ~iscell(data)
+    y = outSTATS (data); % assumes general format
+elseif isstruct(data{1})
+    y = data; % if structured then already in stats form
+else
+    y = staSTATS(data); % otherwise assume within-subjects data and get stats
 end
 
 [x f Eprime] = CMRv4 (y, E);
 f(find(f<tol))=0;
-if ~iscell(data)
-    x = x{1};
-    f = f(1);
-end
