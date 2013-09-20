@@ -1,4 +1,4 @@
-source('../R/STA.R')
+source('../R/sta.R')
 library(testthat)
 
 context("Conversion function tests")
@@ -109,7 +109,7 @@ test_that("Test for CMRfits", {
   expect_equal(nakabayashi.datafit, output$datafit, tolerance = 0.001)
 })
 
-## TODO: Add outSTATS test with delay.dat
+## TODO: Add outSTATS/staCMR/CMRfits tests with delay.dat
 ## test_that("Test for outSTATS", {
 ##   delay <- matrix(scan('../data/delay.dat'), ncol = 7, byrow = TRUE)  
 ## })
