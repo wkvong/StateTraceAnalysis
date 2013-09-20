@@ -4,3 +4,4 @@ Turn datafiles into .rdata format
 Structure repository like an R package
 Make repository public
 Add documentation/viginette
+Move out R code into some different files
