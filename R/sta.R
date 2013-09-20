@@ -1,3 +1,4 @@
+setwd('/home/wkvong/Dropbox/research/current-projects/StateTraceAnalysis/R/')
 source('stats.R')
 source('convert.R')
 
@@ -214,17 +215,19 @@ staCMR <- function(data, E = list()) {
   if (!is.list(E)) {
     E <- list(E)
   }
-  
+
   y <- data
-
-  if (!is.list(y)) {
-    y <- list(y)
+  
+  if (!is.list(data)) {
+    y <- outSTATS(y)
   }
-
-  if (!is.list(y[[1]])) {
+  else if (is.list(data[[1]])) {
+    y <- data
+  }
+  else {
     y <- staSTATS(y)
   }
-
+  
   CMR.output <- CMR(y, E)
   x <- CMR.output$x.star
   f <- CMR.output$f.fits
@@ -232,10 +235,10 @@ staCMR <- function(data, E = list()) {
   
   f[f < tol] <- 0
 
-  if (!is.list(data)) {
-    x <- x[[1]]
-    f <- f[1]
-  }
+  ## if (!is.list(data)) {
+  ##   x <- x[[1]]
+  ##   f <- f[1]
+  ## }
 
   output <- list(x=x, f=f, e.prime=e.prime)
   return(output)
