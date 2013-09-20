@@ -15,7 +15,7 @@ Adj2Cell <- function(adj) {
   E <- rep(list(list()), length(row)) ## Initializes a list of empty lists
 
   ## Fill in each list with corresponding row and column indices
-  for(i in 1:length(row)) {
+  for (i in 1:length(row)) {
     E[[i]] <- c(row[i], column[i])
   }
 
@@ -39,7 +39,7 @@ Adj2Ineq <- function(adj) {
   Aineq <- matrix(0, nrow = length(i), ncol = nrow(adj)) 
   
   ## Fill in matrix with inequality coefficients
-  for(k in 1:length(i)) {
+  for (k in 1:length(i)) {
     Aineq[k, i[k]] <- 1;
     Aineq[k, j[k]] <- -1;
   }
@@ -67,10 +67,10 @@ Cell2Adj <- function(nodes, E=list()) {
 
   ## Fill in adjacency matrix
   if (length(E) != 0) {
-    for(i in 1:length(E)) {
+    for (i in 1:length(E)) {
       if (length(E[[i]]) != 0) {
         u <- t(combn(E[[i]], 2))
-        for(j in 1:nrow(u)) {
+        for (j in 1:nrow(u)) {
           k1 <- which(nodes == u[j, 1])
           k2 <- which(nodes == u[j, 2])
           adj[k1, k2] <- 1;

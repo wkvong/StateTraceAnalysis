@@ -14,7 +14,7 @@ CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: ask John about determining correct structure type here
   if (is.list(data)) {
     type <- 0
-    if(length(data) > 2) {
+    if (length(data) > 2) {
       nvar <- length(unique(data[, 3]))
     }
     else {
@@ -168,8 +168,8 @@ bootstrap <- function(y, type) {
 
     yb <- y
 
-    for(j in 1:length(var)) {
-      for(i in 1:length(cond)) {
+    for (j in 1:length(var)) {
+      for (i in 1:length(cond)) {
         k <- which(y[, 2] == cond[i] & y[, 3] == var[j])
         a <- y[k, ]
         r <- floor(runif(length(k))*length(k))+1
@@ -234,11 +234,6 @@ staCMR <- function(data, E = list()) {
   e.prime <- CMR.output$e.star
   
   f[f < tol] <- 0
-
-  ## if (!is.list(data)) {
-  ##   x <- x[[1]]
-  ##   f <- f[1]
-  ## }
 
   output <- list(x=x, f=f, e.prime=e.prime)
   return(output)
@@ -401,7 +396,7 @@ staMR <- function(data, E = list()) {
   f <- rep(0, length(y))
   exitflag <- list()
 
-  for(i in 1:length(y)) {
+  for (i in 1:length(y)) {
     y.i <- y[[i]]
     MR.output <- MR(y.i$means, y.i$weights, E)
     x[[i]] <- MR.output$x
