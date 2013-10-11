@@ -3,7 +3,7 @@ source('sta.R')
 staPLOT <- function(data = c(), model = c(), groups = c(), labels = c(), xlab = c(), ylab = c(), xlim = c(), ylim = c()) {
   ## Generates a state-trace plot
 
-  ## TODO: arguments and output
+  ## TODO: arguments and output documentation
   
   if (is.list(data)) {
     ys <- staSTATS(data) ## within-subjects structured data
@@ -11,7 +11,7 @@ staPLOT <- function(data = c(), model = c(), groups = c(), labels = c(), xlab = 
   else {
     ys <- outSTATS(data) ## general data format
   }
-  ## TODO: case if data is already is already in stats form
+  ## TODO: cases if data is already is already in stats form
   
   x <- ys[[1]]$means
   y <- ys[[2]]$means
@@ -39,7 +39,9 @@ staPLOT <- function(data = c(), model = c(), groups = c(), labels = c(), xlab = 
     ylab <- "Outcome Variable 2"
   }
 
-  ## TODO: plot points
+  groups.df <- melt(groups)
+  
+  ## TODO: plot pointsn
   plotdata(x, y, groups, 0)
 
   ## TODO: plot error bars
@@ -62,15 +64,11 @@ plotdata <- function(x, y, groups, flag) {
   for (i in 1:length(groups)) {
     a <- x[groups[[i]]]
     b <- y[groups[[i]]]
-    print(a)
-    print(b)
     
     if (i == 1) {
-      print("print group 1")
       plot(a, b, xlim=c(0.3, 0.8), ylim=c(0.2, 0.7), pch=16)
     }
     if (i == 2) {
-      print("print group 2")
       points(a, b)
     }
     ## TODO: other points
@@ -99,7 +97,7 @@ tiesort <- function(x, y) {
 
 testPlot <- function() {
   y <- matrix(scan('../data/delay.dat'), ncol = 7, byrow = TRUE)
-  output <- staCMR(delay)
+  output <- staCMR(y)
   x <- output$x
   groups <- list(1:4, 5:8)
   staPLOT(data=y, model=x, groups=groups)
