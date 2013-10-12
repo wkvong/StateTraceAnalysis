@@ -8,6 +8,8 @@ library(R.matlab)
 library(MASS)
 library(pracma)
 library(reshape2)
+library(plyr)
+library(ggplot2)
 
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: function documentation
