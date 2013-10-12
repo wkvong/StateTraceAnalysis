@@ -52,7 +52,7 @@ if nargin < 5 || isempty(axislabels)
         axislabels{i} = ['Outcome Variable ' num2str(i)];
     end
 end
-if nargin < 6
+zif nargin < 6
     axislimits = {};
 end
    
