@@ -1,4 +1,4 @@
 State Trace Analysis
 ====================
 
-Translation of John's MATLAB code for state trace analysis into R
+An R package for State Trace Analysis (translation of John Dunn's MATLAB code)
