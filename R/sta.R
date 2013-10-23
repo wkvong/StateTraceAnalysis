@@ -11,6 +11,35 @@ library(reshape2)
 library(plyr)
 library(ggplot2)
 
+CMRMNfits <- function(nsample, data, E = list()) {
+  ## Parametric bootstrap sampling test of multinomial data
+  ## data is NCOND x NRESP matrix of counts
+  ## E is partial order in form of cell array or adjacency matrix
+
+  y <- data
+  staMRMN.output <- staMRMN(y, E)
+  x <- staMRMN.output$x
+  f2 <- staMRMN.output$f2
+  staCMRMN.output <- staCMRMN(y, E)
+  x <- staCMRMN.output$x
+  f1 <- staCMRMN.output$f1
+
+  datafit <- c(f1, f2, f1-f2)
+
+}
+
+MRMNfits <- function(nsample, data, E) {
+  
+}
+
+staCMRMN <- function(y, E, flag) {
+  
+}
+
+staMRMN <- function(y, E, flag) {
+  
+}
+
 CMRfits <- function(nsample, data, E = list(), E1 = list()) {
   ## TODO: function documentation
 

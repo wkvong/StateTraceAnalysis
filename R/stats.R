@@ -158,3 +158,6 @@ LoftusMasson <- function(y.i) {
   return(r)
 }
 
+staMRMN <- function(y, E, flag) {
+  
+}
