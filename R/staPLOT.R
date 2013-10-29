@@ -17,11 +17,20 @@ staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c()
   y <- ys[[2]]$means
 
   ## TODO: Get different error bars depending on structure of ys
-  cx <- sqrt(diag(ys[[1]]$cov)/diag(ys[[1]]$n))
-  cy <- sqrt(diag(ys[[2]]$cov)/diag(ys[[2]]$n))
+  if (is.list(data)) {
+    cx <- sqrt(diag(ys[[1]]$cov)/ys[[1]]$n)
+    cy <- sqrt(diag(ys[[2]]$cov)/ys[[2]]$n)
+  }
+  else {
+    cx <- sqrt(diag(ys[[1]]$cov)/diag(ys[[1]]$n))
+    cy <- sqrt(diag(ys[[2]]$cov)/diag(ys[[2]]$n))
+  }
 
   if (isempty(groups)) {
-    groups <- 1:length(ys[[1]]$means)
+    groups <- list()
+    for(i in 1:length(ys[[1]]$means)) {
+      groups[[i]] <- i
+    }
   }
 
   if (isempty(lab)) {
@@ -100,3 +109,19 @@ testPlot <- function() {
   groups <- list(1:4, 5:8)
   staPLOT(data=y, model=x, groups=groups, lab=c("No Delay", "Delay"), xlab="RB", ylab="II", xlim=c(0.3, 0.8), ylim=c(0.2, 0.7))
 }
+
+testPlot2 <- function() {
+  td <- zeros(2,6)
+  td[1,] <- c(.3, .6, .8, .1, .6, 1)
+  td[2,] <- c(.3, .6, .8, .25, .6, .85)
+  N <- 30  
+  nd <- list(zeros(N,6),zeros(N,6))
+  for (i in 1:2) {
+    for (j in 1:N) {
+      nd[[i]][j,] <- td[i,] + 0.5*(runif(6,-1,1)) 
+    }
+  }
+
+  staPLOT(nd)
+}
+
