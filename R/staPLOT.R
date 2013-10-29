@@ -1,6 +1,6 @@
 source('sta.R')
 
-staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c(), ylab = c(), xlim = c(), ylim = c()) {
+staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c(), ylab = c(), xlim = c(0, 1), ylim = c(0, 1)) {
   ## Generates a state-trace plot
 
   ## TODO: arguments and output documentation
