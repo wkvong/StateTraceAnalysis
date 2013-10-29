@@ -62,23 +62,36 @@ staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c()
     sta.df <- cbind(sta.df, xm=xm[ix])
     sta.df <- cbind(sta.df, ym=ym[ix])
   }
+  else {
+    xm <- rep(NA, nrow(sta.df))
+    ym <- rep(NA, nrow(sta.df))
+    sta.df <- cbind(sta.df, xm)
+    sta.df <- cbind(sta.df, ym)
+  }
 
-  sta.df <- sta.df
+  colour.values <- c("black", "black", "black", "black", "black", "black")
+  fill.values <- c("black", "white", "blue", "red", "green", "yellow")
 
-  cols <- c() ## TODO: add different colours here
+  colour.values <- colour.values[1:length(groups)]
+  fill.values <- fill.values[1:length(groups)]
   
-  ggplot(sta.df, aes(x=x, y=y, colour=factor(groups))) +
+  p <- ggplot(sta.df, aes(x=x, y=y, colour=factor(groups))) +
     geom_errorbarh(aes(xmin=x-cx, xmax=x+cx), width=0.01) +
     geom_errorbar(aes(ymin=y-cy, ymax=y+cy), width=0.01) +
-    geom_line(aes(x=xm, y=ym), linetype="dotted") +
-    geom_point(aes(fill=factor(groups)), size=5, shape=21) +
+    geom_point(aes(fill=factor(groups)), size=5, shape=21)
+
+  if(!isempty(model)) {
+    p <- p + geom_line(aes(x=xm, y=ym), linetype="dotted")
+  }
+  
+  p <- p +
     xlab(xlab) +
     ylab(ylab) +
     xlim(xlim) +
     ylim(ylim) +
-    scale_colour_manual(values=c("black", "black"),
+    scale_colour_manual(values=colour.values,
                         labels=lab) +
-    scale_fill_manual(values=c("black", "white"),
+    scale_fill_manual(values=fill.values,
                       labels=lab) +
     theme_bw() +
     theme(panel.grid.major = element_blank()) +
@@ -86,6 +99,8 @@ staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c()
     theme(legend.title=element_blank()) +
     theme(legend.justification=c(1,0)) +
     theme(legend.position=c(1,0))
+
+  plot(p)
 }
 
 tiesort <- function(x, y) {
