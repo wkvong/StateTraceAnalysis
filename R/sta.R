@@ -26,6 +26,46 @@ CMRMNfits <- function(nsample, data, E = list()) {
 
   datafit <- c(f1, f2, f1-f2)
 
+  fits <- matrix(0, nsample, 3)
+
+  for (i in 1:nsample) {
+    ## bootstrap sample
+    yb <- resampleMN(y)
+
+    ## fit model to bootstrap sample
+    staCMRMN.output <- staCMRMN(yb, E)
+    x <- staCMRMN.output$x
+
+    ## resample model
+    yr <- resampleMN(x)
+
+    ## fit model
+    staMRMN.output <- staMRMN(yr, E)
+    x <- staMRMN.output$x
+    f2 <- staMRMN.output$fits ## TODO: check if f or fits is returned
+
+    staCMRMN.output <- staCMRMN(yr, E)
+    x <- staCMRMN.output$x
+    f1 <- staCMRMN.output$f
+
+    fits[isample: ] <- c(f1, f2, f1-f2)
+  }
+
+  ## calculate p
+  k <- which(fits[, 3] >= datafit[3])
+  p <- length(k)/nsample
+
+  output <- list(p=p, datafit=datafit, fits=fits)
+  return(output)
+}
+
+resampleMN <- function(x) {
+  s <- rowSums(x)
+  n <- round(s)
+  p <- x/repmat(s, 1, ncol(x))
+  yr <- rmultinom(1, n, p)
+
+  return(yr)
 }
 
 MRMNfits <- function(nsample, data, E) {
