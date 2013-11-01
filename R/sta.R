@@ -4,7 +4,7 @@ source('convert.R')
 
 library(limSolve)
 library(expm)
-library(R.matlab)
+library(R.matlab) ## TODO: remove eventually
 library(MASS)
 library(pracma)
 library(reshape2)
@@ -32,8 +32,160 @@ MRMNfits <- function(nsample, data, E) {
   
 }
 
-staCMRMN <- function(y, E, flag) {
+staCMRMN <- function(y, E = list(), flag = 0) {
+  L <- list()
+
+  if (is.list(E)) {
+    L[[1]][[1]] <- Cell2Adj(1:nrow(y[[1]], E)) ## E
+  }
+  else {
+    L[[1]][[1]] <- E
+  }
+
+  L[[1]][[2]] <- -Inf ## F
+
+  f.bar <- Inf
+  e.bar <- L[[1]][[1]]
+
+  while(length(L) > 0) {
+    e.prime <- L[[1]][[1]]
+    f.floor <- L[[1]][[2]]
+
+    L[[1]] <- NULL ## Removes the first element from the list
+
+    if (f.floor < f.bar) {
+      staMRMN1.output <- staMRMN1(y, e.prime, flag) ## Least squares optimization
+      x.prime <- staMRMN1.output$x
+      fit <- staMRMN1.output$fit
+      exitflag$ staMRMN1.output$exitflag
+
+      f.fit <- fit
+
+      if (f.fit < f.bar) {
+        feas <- FeasibleCMRMN(x.prime) # Check if feasible, else get an index
+        flag <- feas$flag
+        idx <- feas$idx
+
+        if (flag) {
+          f.bar <- f.fit
+          x.bar <- x.prime
+          e.bar <- e.prime
+        }
+        else {
+          end <- length(L) + 1
+          L[[end]] <- list()
+          L[[end+1]]
+          
+          L[[end]][[1]] <- e.prime
+          L[[end]][idx[1], idx[2]] <- 1 ## (i,j) branch
+          L[[end]][[2]] <- f.fit
+          L[[end+1]][[1]] <- e.prime
+          L[[end+1]][idx[2], idx[1]] <- 1 ## (j, i) branch
+          L[[end+1]][[2]] <- f.fit
+        }
+      }
+    }
+  }
+
+  x.star <- x.bar
+  e.star <- e.bar
+
+  k <- which(x.star < 0)
+  x.star[k] <- 0 ## round negative values to 0
+  g2.fit <- NaN
+
+  output <- list(x.star=x.star, f.bar=f.bar, g2.fit=g2.fit, e.star=e.star)
+  return(output)
+}
+
+testCMRMN <- function() {
+  y <- matrix(c(66, 16, 2, 3, 7, 11, 102, 14, 6, 7, 4, 5, 94, 12, 7, 4, 4, 6, 34, 10, 21, 13, 18, 22, 46, 19, 20, 12, 8, 19, 58, 22, 12, 13, 13, 13, 36, 8, 10, 14, 15, 24, 47, 11, 10, 11, 13, 34, 48, 7, 8, 8, 13, 49, 12, 9, 13, 22, 19, 44, 24, 16, 13, 24, 21, 44, 19, 14, 18, 20, 26, 37), nrow=12, byrow=TRUE)
+  E <- list(c(1, 2, 3), c(4, 5, 6), c(4, 1), c(5, 2), c(6, 3), c(7, 8, 9), c(10, 11, 12), c(10, 7), c(11, 8), c(12, 9))
+  staCMRMN(y, E)
+}
+
+FeasibleCMRMN <- function(x.prime) {
+  flag <- 1
+  idx <- c()
+  tol <- 1e-10
   
+  
+  output <- list(flag=flag, idx=idx)
+  return(output)
+}
+
+staMRMN1 <- function(y, e.prime, flag) {
+  n.sum <- repmat(ncol(y), 1, ncol(y))
+  p <- p/n.sum
+  dim(p) <- c(length(p), 1)
+  dim(n.sum) <- c(length(n.sum, 1))
+  weights <- diag(as.vector(n.sum))
+
+  ## augment for all columns
+  a <- Adj2Ineq(E)
+  A <- ineqrep(a, ncol(y))
+  b <- matrix(0, nrow(A), 1)
+
+  Aeq <- matrix()
+  for(j = 1:ncol(y)) {
+    Aeq <- cbind(Aeq, matrix(1, nrow(y), nrow(y)))
+  }
+
+  beq <- matrix(1, nrow(y), nrow(y))
+
+  ## Set up matrices and bounds
+  C <- expm::sqrtm(weights)
+  d <- C %*% p
+  x0 <- p
+  lb <- matrix(0, nrow(x0), ncol(x0))
+  ub <- matrix(1, nrow(x0), ncol(x0))
+
+  L <- lsei(C, d, A, b, Aeq, beq) ## TODO: figure out how to do this properly!
+  x1 <- L$x
+
+  ## finish off with ML optimization
+  if(L$flag > 0) {
+    ## TODO: find R equivalent of fmincon here!!
+  }
+}
+
+ML <- function(x, y) {
+  if (is.vector(x)) {
+    ## if x is a vector of probabilities
+    dim(y) <- c(length(y), 1)
+    k <- which(x == 0)
+    p <- x
+    p[k] <- 1/sum(y)
+    u <- y*log(p)
+    m <- -sum(u)
+  }
+  else {
+    ## if x is a matrix of expected counts
+    p <- x/repmat(ncol(y), 1, ncol(y))
+    k <- which(x == 0)
+    p[k] <- 1/sum(y)
+    u <- y*log(p)
+    m <- -sum(sum(u))
+  }
+}
+
+ineqrep <- function(a, n) {
+  b <- matrix()
+
+  for (i in 1:n) {
+    u <- c()
+    for (j in 1:n) {
+      if (j <= i) {
+        u <- cbind(u, a)
+      }
+      else {
+        u <- cbind(u, matrix(0, length(a), length(a)))
+      }
+    }
+    b <- rbind(b, u)
+  }
+
+  return(b)
 }
 
 staMRMN <- function(y, E, flag) {
@@ -319,7 +471,7 @@ CMR <- function(y, E = list()) {
       f.fit <- sum(fits)
 
       if (f.fit < f.bar) {
-        feas <- Feasible(x.prime) ## Check for feasible solution
+        feas <- FeasibleCMR(x.prime) ## Check for feasible solution
         flag <- feas$flag
         idx <- feas$idx
 
@@ -353,7 +505,7 @@ CMR <- function(y, E = list()) {
   return(output)
 }
 
-Feasible <- function(x.prime) {
+FeasibleCMR <- function(x.prime) {
   ## Determines if there is a feasible solution (to what?)
   ##
   ## Args:
@@ -363,7 +515,7 @@ Feasible <- function(x.prime) {
   ##   True if there is a feasible solution, otherwise the largest inversion 
   
   flag <- 1
-  idx <- vector()
+  idx <- c()
   tol <- 1e-10
   x <- matrix(0, length(x.prime[[1]]), length(x.prime))
   

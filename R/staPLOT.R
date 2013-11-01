@@ -11,12 +11,10 @@ staPLOT <- function(data = c(), model = c(), groups = c(), lab = c(), xlab = c()
   else {
     ys <- outSTATS(data) ## general data format
   }
-  ## TODO: cases if data is already is already in stats form
   
   x <- ys[[1]]$means
   y <- ys[[2]]$means
 
-  ## TODO: Get different error bars depending on structure of ys
   if (is.list(data)) {
     cx <- sqrt(diag(ys[[1]]$cov)/ys[[1]]$n)
     cy <- sqrt(diag(ys[[2]]$cov)/ys[[2]]$n)
@@ -139,4 +137,3 @@ testPlot2 <- function() {
 
   staPLOT(nd)
 }
-
