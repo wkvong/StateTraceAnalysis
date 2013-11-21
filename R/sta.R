@@ -572,7 +572,7 @@ FeasibleCMR <- function(x.prime) {
   d <- sign(d) ## Convert differences to signs
 
   if (is.vector(d)) {
-    s <- abs(d) - abs(d)
+    s <- sum(abs(d))-abs(sum(d))  #this is a John Fix
   }
   else {
     s <- rowSums(abs(d)) - abs(rowSums(d)) ## If signs of difference are not equal then s > 0
